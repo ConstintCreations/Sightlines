@@ -1,4 +1,4 @@
-import CustomLink from "./customLink";
+import CustomLink from "@/app/components/customLink";
 
 export default function Footer() {
     return (

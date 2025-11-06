@@ -2,10 +2,16 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 
-export default function CustomLink(data: { href: string; text: string; color?: string }) {
-    console.log(data);
+export default function CustomLink(data: { href: string; text: string; color?: "blue" | "lime" }) {
+    const colorVariants = {
+        blue: "text-blue-400 hover:text-blue-300",
+        lime: "text-lime-400 hover:text-lime-300",
+    };
+
+    const textColor = data.color ? colorVariants[data.color] : colorVariants.blue;
+    
     return (
-        <Link className={`px-1 text-${data.color ? data.color : "blue"}-400 hover:text-${data.color ? data.color : "blue"}-300`} href={data.href} target="_blank">
+        <Link className={`px-1 ${textColor}`} href={data.href} target="_blank">
             <motion.div 
                 className="inline-block" 
                 whileHover="hover" 

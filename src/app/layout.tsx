@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Fascinate_Inline, Zain } from 'next/font/google';
-import Footer from "./components/footer";
+import Footer from "@/app/components/footer";
 
 const fascinateInline = Fascinate_Inline({
   subsets: ['latin'],
