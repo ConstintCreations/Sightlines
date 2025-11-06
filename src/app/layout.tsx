@@ -1,6 +1,20 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Fascinate_Inline, Zain } from 'next/font/google';
+import Footer from "./footer";
+
+const fascinateInline = Fascinate_Inline({
+  subsets: ['latin'],
+  weight: '400',
+  variable: '--font-fascinate-inline',
+});
+
+const zain = Zain({
+  subsets: ['latin'],
+  weight: ['400', '700', '800', '900'],
+  variable: '--font-zain',
+});
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,9 +39,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${zain.variable} antialiased`}
       >
         {children}
+        <Footer />
       </body>
     </html>
   );
