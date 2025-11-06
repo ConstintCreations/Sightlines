@@ -13,7 +13,7 @@ export default function CustomLink(data: { href: string; text: string; color?: "
     return (
         <Link className={`px-1 ${textColor}`} href={data.href} target="_blank">
             <motion.div 
-                className="inline-block" 
+                className="inline-block font-bold" 
                 whileHover="hover" 
                 initial="rest" 
             >
