@@ -8,14 +8,15 @@ import { usePathname } from "next/navigation";
 export default function BackArrow(data: { href?: string;}) {
     const pathname = usePathname();
     return (
-        <Link href={data.href ? data.href : pathname.split("/").length <= 2 ? "/" : `/${pathname.split("/")[1]}`}>
-            <motion.div
-                className="text-3xl text-gray-400 hover:text-gray-200 hover:cursor-pointer fixed top-10 left-10"
-                whileHover= {{scale: 1.1, x:-5}}
-                transition={{ type: "spring", stiffness: 300 }}
-            >
-                <FontAwesomeIcon icon={faArrowLeft} />
-            </motion.div>            
-        </Link>
+        <motion.a
+            href={data.href ? data.href : pathname.split("/").length <= 2 ? "/" : `/${pathname.split("/")[1]}`}
+            className="text-3xl text-gray-400 hover:text-gray-200 hover:cursor-pointer fixed top-10 left-10 focus:outline-none"
+            whileHover= {{scale: 1.1, x:-5, color: "var(--color-gray-200)"}}
+            whileFocus= {{scale: 1.1, x:-5, color: "var(--color-gray-200)"}}
+            whileTap={{x: -10, scale: 1.2}}
+            transition={{ type: "spring", stiffness: 300 }}
+        >
+            <FontAwesomeIcon icon={faArrowLeft} />
+        </motion.a>            
     )
 }

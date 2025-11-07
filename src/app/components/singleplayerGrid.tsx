@@ -43,7 +43,7 @@ export default function singleplayerGrid() {
 
     const gridVariants:Variants = {
         visible: (index) => ({scale:1, transition: { type: "spring", stiffness: 200, duration: 0.3, delay: (index%size + Math.floor(index/size)) * delayTime }}),
-        hover: { scale: 1.1, y:-8, transition: { type: "spring", stiffness: 300 }},
+        hover: { scale: 1.1, y:-8, filter: "brightness(1.2)", transition: { type: "spring", stiffness: 300 }},
         tap: { scale: 1.15, y:-16, transition: { type: "spring", stiffness: 300 }},
     };
 
@@ -53,18 +53,30 @@ export default function singleplayerGrid() {
                 <motion.div
                     key={index}
                     custom={index}
-                    className={`h-[2.2em] aspect-square font-bold text-gray-300 rounded-[30%] flex items-center justify-center cursor-pointer select-none`}
-                    style={{ fontSize: `${fontSize}em`, backgroundColor: `var(${cellColors[colorIndex[index]]})` }}
+                    className={`h-[2.2em] aspect-square font-bold text-gray-300 rounded-[30%] flex items-center justify-center cursor-pointer select-none focus:outline-none`}
+                    style={{ fontSize: `${fontSize}em`, backgroundColor: `var(${cellColors[colorIndex[index]]})`,  }}
                     animate={controls}
                     whileHover={animationDone ? "hover" : undefined}
+                    whileFocus={animationDone ? "hover" : undefined}
                     variants={gridVariants}
                     whileTap={"tap"}
-                    onTap={() => {
+                    onTap={(e) => {
+                        console.log(e);
                         setColorIndex((prev) => {
                             const newColors = [...prev];
                             newColors[index] = (newColors[index] + 1) % cellColors.length;
                             return newColors;    
                         })
+                    }}
+                    onContextMenu={(e) => {
+                        e.preventDefault();
+                        setColorIndex((prev) => {
+                            const newColors = [...prev];
+                            newColors[index] = (newColors[index] - 1) % cellColors.length;
+                            if (newColors[index] < 0) newColors[index] += cellColors.length;
+                            return newColors;
+                        })
+                        
                     }}
                 >
                     {colorIndex[index] == 1 && index%2==0 ? index+1 : ""}
