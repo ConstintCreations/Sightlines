@@ -4,7 +4,7 @@ import { get } from "http";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
-export default function singleplayerGrid() {
+export default function SingleplayerGrid() {
     const searchParams = useSearchParams();
     const inSize = searchParams.get("size");
 
@@ -29,8 +29,8 @@ export default function singleplayerGrid() {
         setRandomCompleteGrid();
     }, [size]);
 
-    function setRandomCompleteGrid(completedGrid?: string[], placeableGrid?: (Array<number> | null)[]) {
-        if (!placeableGrid) placeableGrid = Array(size*size).fill(Array.from({ length: size+1 }, (_, i) => i ));
+    function setRandomCompleteGrid(count?: number, completedGrid?: string[], placeableGrid?: (Array<number> | null)[]) {
+        if (!placeableGrid) placeableGrid = Array.from({ length: size * size }, () => Array.from({ length: size + 1 }, (_, i) => i));
         if (!completedGrid) completedGrid = Array(size*size).fill("-");
 
         const randomCellIndex = getRandomPlaceableCell(placeableGrid);
@@ -41,6 +41,24 @@ export default function singleplayerGrid() {
                 return;
             }
         }
+
+        let onlyZeroCellsLeft = true;
+        for (let i = 0; i < placeableGrid.length; i++) {
+            if (placeableGrid[i] !== null && !(placeableGrid[i]!.length === 1 && placeableGrid[i]![0] === 0)) {
+                onlyZeroCellsLeft = false;
+                break;
+            }
+        }
+        if (onlyZeroCellsLeft) {
+            for (let i = 0; i < size*size; i++) {
+                if (completedGrid[i] === "-") {
+                    completedGrid[i] = "0";
+                }
+            }
+            setCompleteGrid(completedGrid);
+            return;
+        }
+
         if (randomCellIndex === null || placeableGrid[randomCellIndex] === null) {
             setCompleteGrid(completedGrid);
             return;
@@ -50,10 +68,20 @@ export default function singleplayerGrid() {
             completedGrid[randomCellIndex] = randomValue.toString();
             placeableGrid[randomCellIndex] = null;
             if (randomValue !== 0) {
-                setRandomCellSolution(randomCellIndex, randomValue, completedGrid, placeableGrid);
+                const cellCount = randomValue - Math.min(...(placeableGrid[randomCellIndex] == null ? [0] : placeableGrid[randomCellIndex]!));
+                const returnedCellSolution = setRandomCellSolution(randomCellIndex, cellCount, completedGrid, placeableGrid);
+                completedGrid = returnedCellSolution.completedGrid;
+                placeableGrid = returnedCellSolution.placeableGrid;
             }
-            setCompleteGrid(completedGrid);
-            //setRandomCompleteGrid(completedGrid, placeableGrid);
+            
+            if (count) {
+                count--;
+                if (count <= 0) {
+                    setCompleteGrid(completedGrid);
+                    return;
+                }
+            }
+            setRandomCompleteGrid(count ? count : undefined, completedGrid, placeableGrid);
         }
     }
 
@@ -64,15 +92,63 @@ export default function singleplayerGrid() {
         right: boolean
     }
 
-    function setRandomCellSolution(cellIndex: number, cellValue: number, completedGrid: string[], placeableGrid: (Array<number> | null)[], placedIndexes?: number[]) {
+    function setRandomCellSolution(cellIndex: number, cellCount: number, completedGrid: string[], placeableGrid: (Array<number> | null)[], placedIndexes?: number[]) {
         if (!placedIndexes) placedIndexes = [cellIndex];
-        placedIndexes = getPlaceableCellInRandomDirection(cellIndex, cellValue, placedIndexes, placeableGrid);
-        console.log(placedIndexes);
+        placedIndexes = getPlaceableCellInRandomDirection(cellIndex, cellCount, placedIndexes, placeableGrid);
+
+        let leftMost = cellIndex;
+        let rightMost = cellIndex;
+        let topMost = cellIndex;
+        let bottomMost = cellIndex;
+        let horizontalVision = 1;
+        let verticalVision = 1;
+
+        const cellIndexRow = Math.floor(cellIndex/size);
+        const cellIndexCol = cellIndex%size;
+
         for (let i = 1; i < placedIndexes.length; i++) {
             const index = placedIndexes[i];
             completedGrid[index] = "O";
-            placeableGrid[index] = null;
+            
+            const placedIndexRow = Math.floor(placedIndexes[i]/size);
+            const placedIndexCol = placedIndexes[i]%size;
+
+            if (placedIndexes[i] < leftMost && placedIndexCol < cellIndexCol) leftMost = placedIndexes[i];
+            if (placedIndexes[i] > rightMost && placedIndexCol > cellIndexCol) rightMost = placedIndexes[i];
+            if (placedIndexes[i] < topMost && placedIndexRow < cellIndexRow) topMost = placedIndexes[i];
+            if (placedIndexes[i] > bottomMost && placedIndexRow > cellIndexRow) bottomMost = placedIndexes[i];
+
+            horizontalVision = Math.max(horizontalVision, Math.abs((placedIndexes[i]%size) - (cellIndex%size)));
+            verticalVision = Math.max(verticalVision, Math.abs(Math.floor(placedIndexes[i]/size) - Math.floor(cellIndex/size)));
         }
+
+        const topIndex = getNextIndexInDirection(topMost, "up")!;
+        const bottomIndex = getNextIndexInDirection(bottomMost, "down")!;
+        const leftIndex = getNextIndexInDirection(leftMost, "left")!;
+        const rightIndex = getNextIndexInDirection(rightMost, "right")!;
+
+        if (topIndex >= 0 && placeableGrid[topIndex] !== null) {
+            completedGrid[topIndex] = "0";
+            placeableGrid[topIndex] = null;
+        }
+        if (bottomIndex < size*size && placeableGrid[bottomIndex] !== null) {
+            completedGrid[bottomIndex] = "0";
+            placeableGrid[bottomIndex] = null;
+        }
+        if (leftIndex % size >= 0 && (placeableGrid[leftIndex] !== null) && (cellIndexRow == Math.floor(leftIndex/size))) {
+            completedGrid[leftIndex] = "0";
+            placeableGrid[leftIndex] = null;
+        }
+        if (rightIndex % size < size && (placeableGrid[rightIndex] !== null) && (cellIndexRow == Math.floor(rightIndex/size))) {
+            completedGrid[rightIndex] = "0";
+            placeableGrid[rightIndex] = null;
+        }
+
+        placeableGrid = updatePlaceableGrid(completedGrid, placeableGrid)!;
+
+        logGrid(completedGrid, placeableGrid);
+
+        return {completedGrid, placeableGrid};
     }
 
     function getPlaceableCellInRandomDirection(cellIndex: number, count: number, placedIndexes: number[], placeableGrid: (Array<number> | null)[]) {
@@ -104,6 +180,7 @@ export default function singleplayerGrid() {
             if (placedIndexes[i] > rightMost && placedIndexCol > cellIndexCol) rightMost = placedIndexes[i];
             if (placedIndexes[i] < topMost && placedIndexRow < cellIndexRow) topMost = placedIndexes[i];
             if (placedIndexes[i] > bottomMost && placedIndexRow > cellIndexRow) bottomMost = placedIndexes[i];
+            
         }
 
         switch (direction) {
@@ -125,11 +202,11 @@ export default function singleplayerGrid() {
                 break;
         }
         
-        if (count-1 > 0) {
+        if (availableDirections.length == 0 || count-1 <= 0) {
+            return placedIndexes;
+        } else {
             count--;
             return getPlaceableCellInRandomDirection(cellIndex, count, placedIndexes, placeableGrid);
-        } else {
-            return placedIndexes;
         }
     }
 
@@ -145,7 +222,7 @@ export default function singleplayerGrid() {
         let horizontalVision = 1;
         let verticalVision = 1;
 
-         for (let i=0; i < placedIndexes.length; i++) {
+        for (let i=0; i < placedIndexes.length; i++) {
             if (placeableDirections.left && placedIndexes[i]%size==0) {
                 placeableDirections.left = false;
             }
@@ -163,26 +240,26 @@ export default function singleplayerGrid() {
             if (placedIndexes[i] > rightMost) rightMost = placedIndexes[i];
             if (placedIndexes[i] < topMost) topMost = placedIndexes[i];
             if (placedIndexes[i] > bottomMost) bottomMost = placedIndexes[i];
- 
+
             horizontalVision = Math.max(horizontalVision, Math.abs((placedIndexes[i]%size) - (center%size)));
             verticalVision = Math.max(verticalVision, Math.abs(Math.floor(placedIndexes[i]/size) - Math.floor(center/size)));
         }
 
         if (placeableDirections.left) {
             const nextIndex = getNextIndexInDirection(leftMost, "left");
-            if (nextIndex && placeableGrid[nextIndex] === null || nextIndex && placeableGrid[nextIndex] && Math.max(...placeableGrid[nextIndex]!) < horizontalVision+1) placeableDirections.left = false;
+            if ((nextIndex && placeableGrid[nextIndex] === null) || (nextIndex && placeableGrid[nextIndex] && Math.max(...placeableGrid[nextIndex]!) < horizontalVision+1)) placeableDirections.left = false;
         }
         if (placeableDirections.right) {
             const nextIndex = getNextIndexInDirection(rightMost, "right");
-            if (nextIndex && placeableGrid[nextIndex] === null || nextIndex && placeableGrid[nextIndex] && Math.max(...placeableGrid[nextIndex]!) < horizontalVision+1) placeableDirections.right = false;
+            if ((nextIndex && placeableGrid[nextIndex] === null) || (nextIndex && placeableGrid[nextIndex] && Math.max(...placeableGrid[nextIndex]!) < horizontalVision+1)) placeableDirections.right = false;
         }
         if (placeableDirections.up) {
             const nextIndex = getNextIndexInDirection(topMost, "up");
-            if (nextIndex && placeableGrid[nextIndex] === null || nextIndex && placeableGrid[nextIndex] && Math.max(...placeableGrid[nextIndex]!) < verticalVision+1) placeableDirections.up = false;
+            if ((nextIndex && placeableGrid[nextIndex] === null) || (nextIndex && placeableGrid[nextIndex] && Math.max(...placeableGrid[nextIndex]!) < verticalVision+1)) placeableDirections.up = false;
         }
         if (placeableDirections.down) {
             const nextIndex = getNextIndexInDirection(bottomMost, "down");
-            if (nextIndex && placeableGrid[nextIndex] === null || nextIndex && placeableGrid[nextIndex] && Math.max(...placeableGrid[nextIndex]!) < verticalVision+1) placeableDirections.down = false;
+            if ((nextIndex && placeableGrid[nextIndex] === null) || (nextIndex && placeableGrid[nextIndex] && Math.max(...placeableGrid[nextIndex]!) < verticalVision+1)) placeableDirections.down = false;
         }
 
         return placeableDirections;
@@ -209,13 +286,79 @@ export default function singleplayerGrid() {
         return randomIndex;
     }
 
+    function updatePlaceableGrid(completedGrid: string[], placeableGrid: (Array<number> | null)[]) {
+        
+        for (let i = 0; i < size*size; i++) {
+            if (placeableGrid[i] === null) continue;
+
+            if (completedGrid[i] !== "-" && completedGrid[i] !== "O") {
+                placeableGrid[i] = null;
+                continue;
+            }
+
+            let minVision = 0;
+            let maxVision = 0;
+
+            const directions: ("up" | "down" | "left" | "right")[] = ["up", "down", "left", "right"];
+            for (let dirIndex = 0; dirIndex < directions.length; dirIndex++) {
+                const direction = directions[dirIndex];
+                let nextIndex = getNextIndexInDirection(i, direction);
+                while (nextIndex !== undefined && nextIndex >= 0 && nextIndex < size*size) {
+                    if (completedGrid[nextIndex] == "0") {
+                        break;
+                    } else if (completedGrid[nextIndex] == "-") {
+                        maxVision++;
+                    } else {
+                        minVision++;
+                        maxVision++;
+                    }
+                    if (minVision >= size) {
+                        placeableGrid[i] = null;
+                        break;
+                    }
+                    nextIndex = getNextIndexInDirection(nextIndex, direction);
+                }
+            }
+
+            let newPlaceableValues: number[] = [];
+            for (let i = minVision; i <= (maxVision > size ? size : maxVision); i++) {
+                newPlaceableValues.push(i);
+            }
+            if (newPlaceableValues.length === 0) {
+                placeableGrid[i] = null;
+                continue;
+            }
+            placeableGrid[i] = newPlaceableValues;
+            continue;
+        }
+
+        return placeableGrid;
+    }
+
+    function logGrid(completedGrid: string[], placeableGrid: (Array<number> | null)[]) {
+        for (let i = 0; i < size; i++) {
+            console.log(JSON.stringify(completedGrid).slice(i*size*4, i*size*4 + size*4));
+        }
+        console.log("-".repeat(size*4));
+        for (let i = 0; i < size; i++) {
+            let line = "";
+            for (let j = 0; j < size; j++) {
+                line += JSON.stringify(placeableGrid[j+size*i]);
+                line += " ";
+            }
+            console.log(line);
+        }
+
+        console.log(" ".repeat(size*4));
+        console.log("=".repeat(size*4));
+        console.log(" ".repeat(size*4));
+    }
+
     const cellColors = ["--color-zinc-800", "--color-cyan-700", "--color-orange-700"];
     const [colorIndex, setColorIndex] = useState<number[]>([]);
     useEffect(() => {
-        setColorIndex(Array.from({ length: size * size }).map((_, index) => parseInt(completeGrid[index]) > 0 || completeGrid[index] == "O" ? 1 : 2))
+        setColorIndex(Array.from({ length: size * size }).map((_, index) => parseInt(completeGrid[index]) > 0 || completeGrid[index] == "O" ? 1 : parseInt(completeGrid[index]) === 0 ? 2 : 0 ));
     }, [completeGrid]);
-
-    console.log(completeGrid);
 
     const delayTime = -0.0075*size + 0.08;
     let fontSize = (-0.14*size + 2.76).toFixed(2);
