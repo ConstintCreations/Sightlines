@@ -16,30 +16,20 @@ export default function SingleplayerGrid() {
 
     const size = Number(inSize);
 
+    type Direction = "up" | "down" | "left" | "right";
+    type VisionPattern = { [direction in Direction]: { maxVisible: number; currentVisible: number; gapDistances: number[]; deniedValues: number[]; }; };
+    type PatternLayout = { index: number; x: number; y: number; completedValue: number | "X" | "O" | "-"; desiredValue: number | "X" | "O" | "-"};
+    type Pattern = PatternLayout[];
+
     type Cell = {
         index: number;
         x: number;
         y: number;
-        playValue: number | "X" | "O" | "-";
         value: number | "X" | "O" | "-";
-        min: number;
-        max: number;
-    deniedValues: { up: number[]; down: number[]; left: number[]; right: number[] };
-        currentVision: {
-            left: number;
-            right: number;
-            up: number;
-            down: number;
-            total: number;
-        }
-        maxVision: {
-            left: number;
-            right: number;
-            up: number;
-            down: number;
-            total: number;
-        }
+        completedValue: number | "X" | "O" | "-";
+        patterns: Record<number, Pattern[]>;
         neededForCompletion: boolean;
+        placeable: boolean;
     }
 
     const [gridData, setGridData] = useState<Cell[]>([]);
@@ -49,20 +39,11 @@ export default function SingleplayerGrid() {
             index: i,
             x: i % size,
             y: Math.floor(i / size),
-            playValue: "-",
             value: "-",
-            min: 0,
-            max: (i % size) + (size - 1 - (i % size)) + (Math.floor(i / size)) + (size - 1 - Math.floor(i / size)),
-            deniedValues: { up: [], down: [], left: [], right: [] },
-            currentVision: { left: 0, right: 0, up: 0, down: 0, total: 0 },
-            maxVision: { 
-                left: i % size,
-                right: size - 1 - (i % size),
-                up: Math.floor(i / size),
-                down: size - 1 - Math.floor(i / size),
-                total: (i % size) + (size - 1 - (i % size)) + (Math.floor(i / size)) + (size - 1 - Math.floor(i / size)),
-            },
+            completedValue: "-",
+            patterns: {},
             neededForCompletion: false,
+            placeable: true,
         }));
         const generatedGrid = generateGrid(newGrid);
         setGridData(generatedGrid);
@@ -80,239 +61,265 @@ export default function SingleplayerGrid() {
             return grid[index];
         }
         function getRandomPlaceableCell() {
-            const placeableCells = grid.filter(cell => cell.value === "-" || cell.value === "O");
+            let placeableCells = grid.filter(cell => cell.placeable && cell.completedValue === "-");
+            if (placeableCells.length > Math.round(size/1.5)) placeableCells = grid.filter(cell => cell.placeable && (cell.completedValue === "-" || cell.completedValue === "O"));
             if (placeableCells.length === 0) return null;
             const randomIndex = Math.floor(Math.random() * placeableCells.length);
             return placeableCells[randomIndex];
         }
-        function getRandomCellValue(cell: Cell) {
-            const possibleValues = [];
-            for (const direction of ["up", "down", "left", "right"] as const) { // Rework possible values to temporarily treat denied values as an X in that direction
-                if (cell.deniedValues[direction].length > 0) {
-                    cell.maxVision[direction] = 0;
-                    cell.maxVision.total = cell.maxVision.up + cell.maxVision.down + cell.maxVision.left + cell.maxVision.right;
-                    cell.min = cell.currentVision.total;
-                    cell.max = cell.maxVision.total + cell.currentVision.total;
-                }
-            }
-            for (let val = cell.min; val <= (cell.max > size ? size : cell.max); val++) { 
-                possibleValues.push(val);
-            }
-            if (possibleValues.length === 0) return "X";
-            const randomValue = possibleValues[Math.floor(Math.random() * possibleValues.length)];
-            return randomValue === 0 ? "X" : randomValue;
-        }
-        function placeCell(fromCell: Cell, direction: keyof typeof fromCell.maxVision, value: "O" | "X") {
-            let targetCell: Cell | null = fromCell;
-
-            const xOffset = direction === "left" ? -1 : direction === "right" ? 1 : 0;
-            const yOffset = direction === "up" ? -1 : direction === "down" ? 1 : 0;
-
-            function updateOCellVision(cell : Cell) {
-                if (!cell) return;
-                cell.currentVision[direction] = fromCell.currentVision[direction]+1;
-                if (direction === "left" || direction === "right") {
-                    cell.maxVision.right = 0;
-                    cell.maxVision.left = 0;
-                } else {
-                    cell.maxVision.up = 0;
-                    cell.maxVision.down = 0;
-                }
-                cell.maxVision.total = cell.maxVision.up + cell.maxVision.down + cell.maxVision.left + cell.maxVision.right;
-                cell.currentVision.total = cell.currentVision.up + cell.currentVision.down + cell.currentVision.left + cell.currentVision.right;
-                cell.min = cell.currentVision.total;
-                cell.max = cell.maxVision.total + cell.currentVision.total;
-            }
-            
-            targetCell = getCell(targetCell.x + xOffset, targetCell.y + yOffset);
-            if (value === "X") {
-                while (targetCell && (targetCell.value === "O" || typeof targetCell.value === "number")) {
-                    targetCell = getCell(targetCell.x + xOffset, targetCell.y + yOffset);
+        function generatePossiblePatternsForCell(cell: Cell) {
+            function getDirectionalVisions() {
+                let directionalVisions : VisionPattern = {
+                    up: { maxVisible: 0, currentVisible: 0, gapDistances: [], deniedValues: [] },
+                    down: { maxVisible: 0, currentVisible: 0, gapDistances: [], deniedValues: [] },
+                    left: { maxVisible: 0, currentVisible: 0, gapDistances: [], deniedValues: [] },
+                    right: { maxVisible: 0, currentVisible: 0, gapDistances: [], deniedValues: [] },
                 }
 
-                if (targetCell) {
-                    targetCell.value = "X";
-                    return true;
-                } else {
-                    return false;
-                }
-            }
-            if (targetCell) updateOCellVision(targetCell);
-            let maxTimes = fromCell.currentVision[direction];
-            for (let times = 0; times < maxTimes; times++) {
-                if(targetCell && targetCell.value === "O" && times < maxTimes) {
-                    targetCell = getCell(targetCell.x + xOffset, targetCell.y + yOffset);
-                    if (targetCell) updateOCellVision(targetCell);
-                } else if (targetCell) {
-                    if (targetCell.value === "O") {
-                        targetCell = getCell(targetCell.x + xOffset, targetCell.y + yOffset);
-                        if (targetCell) updateOCellVision(targetCell);
-                        if (value === "O") {
-                            return true;
-                        };
-                    }
-                }
-            }
-
-            if (!targetCell) return false;
-            if (targetCell.value === "-") {
-                targetCell.value = value;
-                return true;
-            }
-        }
-        function updateEmptyCellsVision() {
-            for (const cell of grid) {
-                if (cell.value !== "-") continue;
-                let nonContiguousOs: { gapDistance: number, direction: keyof Cell["maxVision"] }[] = [];
-                cell.currentVision = { up: 0, down: 0, left: 0, right: 0, total: 0 };
-                cell.maxVision = { left: 0, right: 0, up: 0, down: 0, total: 0 };
-                for (const direction of ["left", "right", "up", "down"] as const) {
-                    let targetCell: Cell | null = cell;
-
-                    const xOffset = direction === "left" ? -1 : direction === "right" ? 1 : 0;
-                    const yOffset = direction === "up" ? -1 : direction === "down" ? 1 : 0;
-
+                for (let direction of ["up", "down", "left", "right"] as Direction[]) {
                     let contiguous = true;
-                    let gapDistance = 0;
-
-                    targetCell = getCell(targetCell.x + xOffset, targetCell.y + yOffset);
-                    while (targetCell && targetCell.value !== "X") {
-                        if (typeof targetCell.value === "number") {
-                            console.error("Unexpected number cell when updating empty cells' vision:", cell, targetCell);
-                        }
-                        if (targetCell.value === "O" && contiguous) {
-                            cell.currentVision[direction]++;
-                            cell.currentVision.total++;
-                            cell.min = cell.currentVision.total;
-                            cell.max = cell.maxVision.total + cell.currentVision.total;
-                        } else if (targetCell.value === "-") {
+                    let blankDistances:number[] = [];
+                    for (let i = 1; i < size; i++) {
+                        let xOffset = direction === "left" ? -i : direction === "right" ? i : 0;
+                        let yOffset = direction === "up" ? -i : direction === "down" ? i : 0;
+                        let targetCell = getCell(cell.x + xOffset, cell.y + yOffset);
+                        if (!targetCell || targetCell.completedValue === "X") break;
+                        if ((targetCell.completedValue === "O" || typeof targetCell.completedValue === "number") && contiguous) {
+                            directionalVisions[direction].currentVisible++;
+                            directionalVisions[direction].maxVisible++;
+                        } else if (targetCell.completedValue === "-") {
+                            directionalVisions[direction].maxVisible++;
                             contiguous = false;
-                            cell.maxVision[direction]++;
-                            cell.maxVision.total++;
-                            cell.min = cell.currentVision.total;
-                            cell.max = cell.maxVision.total + cell.currentVision.total;
-                            gapDistance++;
-                        } else if (targetCell.value === "O" && !contiguous) {
-                            nonContiguousOs.push({ gapDistance, direction });
-                            cell.maxVision[direction]++;
-                            cell.maxVision.total++;
-                            cell.min = cell.currentVision.total;
-                            cell.max = cell.maxVision.total + cell.currentVision.total;
+                            blankDistances.push(Math.abs(xOffset) + Math.abs(yOffset));
+                        } else if ((targetCell.completedValue === "O" || typeof targetCell.completedValue === "number") && !contiguous) {
+                            directionalVisions[direction].maxVisible++;
+                            directionalVisions[direction].gapDistances = blankDistances.slice();
                         }
-
-                        targetCell = getCell(targetCell.x + xOffset, targetCell.y + yOffset);
+                    }
+                    for (let gapDistanceValue of directionalVisions[direction].gapDistances) {
+                        if (!directionalVisions[direction].gapDistances.includes(gapDistanceValue + 1) && gapDistanceValue !== directionalVisions[direction].maxVisible) {
+                            directionalVisions[direction].deniedValues.push(gapDistanceValue);
+                        }
                     }
                 }
 
-                cell.min = cell.currentVision.total;
-                cell.max = cell.currentVision.total + cell.maxVision.total;
-
-                if (nonContiguousOs.length > 0) {
-                    cell.deniedValues = { up: [], down: [], left: [], right: [] };
-
-                    const gapsByDir: Record<string, number[]> = { up: [], down: [], left: [], right: [] };
-                    for (const n of nonContiguousOs) {
-                        gapsByDir[n.direction].push(n.gapDistance);
-                    }
-
-                    for (const dir of ["up", "down", "left", "right"] as const) {
-                        const gaps = gapsByDir[dir];
-                        if (gaps.length === 0) continue;
-
-                        const limit = Math.min(gaps.length, 20);
-                        const totalMasks = 1 << limit;
-                        const deniedSet = new Set<number>();
-
-                        for (let mask = 1; mask < totalMasks; mask++) {
-                            let sum = 0;
-                            for (let b = 0; b < limit; b++) {
-                                if (mask & (1 << b)) sum += gaps[b];
-                            }
-                            const impossible = sum + cell.min;
-                            if (impossible >= cell.min && impossible < size) {
-                                deniedSet.add(impossible);
-                            }
+                return directionalVisions;
+            }
+            function getAllowedValuesInDirections(directionalVisionPattern: VisionPattern) {
+                let allowedValuesPerDirection: { [direction in Direction]: number[] } = {
+                    up: [],
+                    down: [],
+                    left: [],
+                    right: [],
+                };
+                for (let direction of ["up", "down", "left", "right"] as Direction[]) {
+                    for (let val = directionalVisionPattern[direction].currentVisible + 1; val <= directionalVisionPattern[direction].maxVisible; val++) {
+                        if (!directionalVisionPattern[direction].deniedValues.includes(val)) {
+                            allowedValuesPerDirection[direction].push(val);
                         }
+                    }
+                }
 
-                        cell.deniedValues[dir as keyof typeof cell.deniedValues] = Array.from(deniedSet).sort((a, b) => a - b);
-                        let tx = cell.x;
-                        let ty = cell.y;
-                        const xOffset = dir === "left" ? -1 : dir === "right" ? 1 : 0;
-                        const yOffset = dir === "up" ? -1 : dir === "down" ? 1 : 0;
+                return allowedValuesPerDirection;
+            }
 
-                        while (true) {
-                            tx += xOffset;
-                            ty += yOffset;
-                            const t = getCell(tx, ty);
-                            if (!t || t.value === "X") break;
-                            for (const denied of deniedSet) {
-                                if (!t.deniedValues[dir].includes(denied)) {
-                                    t.deniedValues[dir].push(denied);
+            if (cell.completedValue === "-") {
+                cell.patterns[0] = [[{ index: cell.index, x: cell.x, y: cell.y, completedValue: "-", desiredValue: "X" }]];
+            }
+
+            let directionalVisions = getDirectionalVisions();
+            let allowedValuesInDirections = getAllowedValuesInDirections(directionalVisions);
+            let min = directionalVisions.up.currentVisible + directionalVisions.down.currentVisible + directionalVisions.left.currentVisible + directionalVisions.right.currentVisible;
+            let max = directionalVisions.up.maxVisible + directionalVisions.down.maxVisible + directionalVisions.left.maxVisible + directionalVisions.right.maxVisible;
+            console.log(allowedValuesInDirections, directionalVisions, min, max);
+            if (min > size && cell.completedValue !== "-") {
+                cell.placeable = false;
+                return;
+            }
+            let minPatterns: Pattern[] = [];
+            for (let direction of ["up", "down", "left", "right"] as Direction[]) {
+                for (let i = 0; i < directionalVisions[direction].currentVisible; i++) {
+                    let x = cell.x + (direction === "left" ? -(i+1) : direction === "right" ? (i+1) : 0);
+                    let y = cell.y + (direction === "up" ? -(i+1) : direction === "down" ? (i+1) : 0);
+                    const targetCell = getCell(x, y);
+                    if (!targetCell) {
+                        console.error("Target cell not found in min pattern generation at ", x, y);
+                        continue;
+                    };
+                    if (targetCell.completedValue === "O" || typeof targetCell.completedValue === "number") {
+                        minPatterns.push([{ index: targetCell.index, x: targetCell.x, y: targetCell.y, completedValue: targetCell.completedValue, desiredValue: targetCell.completedValue }]);
+                    } else if (targetCell.completedValue === "-") {
+                        minPatterns.push([{ index: targetCell.index, x: targetCell.x, y: targetCell.y, completedValue: targetCell.completedValue, desiredValue: "O" }]);
+                    } else if (targetCell.completedValue === "X") {
+                        console.error("Unexpected 'X' cell in min pattern generation at ", x, y);
+                    }
+                }
+            }
+
+            for (let i = min; i <= (max > size ? size : max); i++) {
+                let extraVision = i-min;
+                let patternsForValueI: Pattern[] = [];
+                
+                function generatePatterns(allowedDirections: Direction[], remainingVision: number, combination: Record<Direction, number>) {
+                    if (allowedDirections.length === 0) {
+                        if (remainingVision === 0) {
+                            const fullPatternMap: Record<number, PatternLayout> = {};
+
+                            for (const minPattern of minPatterns) {
+                                for (const patternCell of minPattern) {
+                                    fullPatternMap[patternCell.index] = patternCell;
                                 }
                             }
+
+                            function getFirstVisibleCellsUpTo(total: number, direction: Direction): PatternLayout[] {
+                                const patternCell: PatternLayout[] = [];
+                                let count = 0;
+                                for (let step = 1; ; step++) {
+                                    const x = cell.x + (direction === "left" ? -step : direction === "right" ? step : 0);
+                                    const y = cell.y + (direction === "up" ? -step : direction === "down" ? step : 0);
+                                    const targetCell = getCell(x, y);
+                                    if (!targetCell || targetCell.completedValue === "X") break;
+                                    count++;
+                                    if (count <= total) {
+                                        patternCell.push({ index: targetCell.index,x: targetCell.x, y: targetCell.y, completedValue: targetCell.completedValue, desiredValue: targetCell.completedValue === "-" ? "O" : targetCell.completedValue});
+                                    }
+                                    if (count >= total) break;
+                                }
+                                return patternCell;
+                            }
+
+                            for (const direction of ["up", "down", "left", "right"] as Direction[]) {
+                                const chosenTotal = combination[direction]; 
+                                if (typeof chosenTotal !== "number") continue;
+
+                                const cellsToAdd = getFirstVisibleCellsUpTo(chosenTotal, direction);
+                                for (const patternCell of cellsToAdd) {
+                                    fullPatternMap[patternCell.index] = patternCell;
+                                }
+                            }
+
+                            const maxDistance: Record<Direction, number> = { up: 0, down: 0, left: 0, right: 0 };
+                            for (const indexString of Object.keys(fullPatternMap)) {
+                                const patternCell = fullPatternMap[Number(indexString)];
+                                if (patternCell.x === cell.x) {
+                                    if (patternCell.y < cell.y) maxDistance.up = Math.max(maxDistance.up, cell.y - patternCell.y);
+                                    if (patternCell.y > cell.y) maxDistance.down = Math.max(maxDistance.down, patternCell.y - cell.y);
+                                }
+                                if (patternCell.y === cell.y) {
+                                    if (patternCell.x < cell.x) maxDistance.left = Math.max(maxDistance.left, cell.x - patternCell.x);
+                                    if (patternCell.x > cell.x) maxDistance.right = Math.max(maxDistance.right, patternCell.x - cell.x);
+                                }
+                            }
+
+                            const bookendOffsets: Record<Direction, [number, number]> = {
+                                up: [0, -(maxDistance.up + 1)],
+                                down: [0, maxDistance.down + 1],
+                                left: [-(maxDistance.left + 1), 0],
+                                right: [maxDistance.right + 1, 0],
+                            };
+
+                            for (const direction of ["up", "down", "left", "right"] as Direction[]) {
+                                const [xOffset, yOffset] = bookendOffsets[direction];
+                                const targetCell = getCell(cell.x + xOffset, cell.y + yOffset);
+                                if (!targetCell) continue;
+                                if (!fullPatternMap[targetCell.index]) {
+                                    if (targetCell.completedValue === "O" || typeof targetCell.completedValue === "number") {
+                                        continue;
+                                    }
+                                    fullPatternMap[targetCell.index] = {
+                                        index: targetCell.index,
+                                        x: targetCell.x,
+                                        y: targetCell.y,
+                                        completedValue: targetCell.completedValue,
+                                        desiredValue: "X"
+                                    };
+                                }
+                            }
+
+                            patternsForValueI.push(Object.values(fullPatternMap));
                         }
+                        return;
+                    }
+
+                    const direction = allowedDirections[0];
+                    const otherDirections = allowedDirections.slice(1);
+
+                    const current = directionalVisions[direction].currentVisible;
+                    const allowedTotals = [current, ...(allowedValuesInDirections[direction] ?? [])].filter((v, idx, arr) => arr.indexOf(v) === idx);
+
+                    const minPossibleForOthers = otherDirections.reduce((acc, d) => acc + directionalVisions[d].currentVisible, 0);
+
+                    for (const chosenTotal of allowedTotals) {
+                        if (chosenTotal < current) continue;
+                        if (chosenTotal > directionalVisions[direction].maxVisible) continue;
+
+                        const usedExtra = (chosenTotal - current);
+                        if (usedExtra > remainingVision) continue;
+
+                        combination[direction] = chosenTotal;
+                        generatePatterns(otherDirections, remainingVision - usedExtra, combination);
+                        combination[direction] = 0;
                     }
                 }
+
+                generatePatterns(["up", "down", "left", "right"], extraVision, { up: 0, down: 0, left: 0, right: 0 });
+
+                cell.patterns[i] = patternsForValueI;
             }
+            
+            //console.log("Generated patterns for cell at " + `(${cell.x}, ${cell.y})` + " :", cell.patterns);
+        }
+        function getRandomCellValue(cell: Cell) {
+            const keys = Object.keys(cell.patterns).map(Number).filter(k => Array.isArray(cell.patterns[k]) && cell.patterns[k].length > 0);
+
+            if (keys.length === 0) {
+                console.warn("No valid patterns found for cell", cell);
+                return "X";
+            }
+
+            const randomValue = keys[Math.floor(Math.random() * keys.length)];
+            return randomValue === 0 ? "X" : randomValue;
+        }
+        function placeCellsAccordingToRandomlyGeneratedPattern(cell: Cell) {
+            const patternsForCell = cell.patterns[cell.completedValue as number];
+            if (!patternsForCell || patternsForCell.length === 0) {
+                console.error("No patterns found for cell at ", cell.x, cell.y, " with value ", cell.completedValue);
+                return;
+            }
+            const randomPattern = patternsForCell[Math.floor(Math.random() * patternsForCell.length)];
+            for (const patternCell of randomPattern) {
+                const targetCell = getCellByIndex(patternCell.index!);
+                if (!targetCell) {
+                    console.error("Target cell not found in pattern placement at ", patternCell.x, patternCell.y);
+                    continue;
+                };
+                targetCell.completedValue = patternCell.desiredValue;
+                console.log("Placed pattern cell " + patternCell.desiredValue + " at " + `(${patternCell.x}, ${patternCell.y})` + " :", targetCell);
+            }
+            
         }
         
-        //for (let i = 0; i < 3; i++) {
-        while (grid.some(cell => cell.value === "-")) {
+        //for (let i = 0; i < 1; i++) {
+        while (grid.some(cell => cell.completedValue === "-")) {
             let randomCell = getRandomPlaceableCell();
             if (!randomCell) break;
-            randomCell.neededForCompletion = true;
+            generatePossiblePatternsForCell(randomCell);
+            if (randomCell.placeable && Object.keys(randomCell.patterns).length !== 0) {
+                randomCell.neededForCompletion = true;
+                randomCell.completedValue = getRandomCellValue(randomCell);
+                randomCell.value = randomCell.completedValue;
+                if (randomCell.completedValue === "X") {
+                    console.log("Placed an X cell, skipping vision placement for this cell:", randomCell);
+                    continue;
+                }
+                
+                console.log("Placed cell " + randomCell.completedValue + " at " + `(${randomCell.x}, ${randomCell.y})` + " :", randomCell);
 
-            randomCell.value = getRandomCellValue(randomCell);
-            if (randomCell.value === "X") {
-                updateEmptyCellsVision();
-                console.log("Placed an X cell, skipping vision placement for this cell:", randomCell);
-                continue;
+                placeCellsAccordingToRandomlyGeneratedPattern(randomCell);
+            } else {
+                randomCell.placeable = false;
+                console.log("Marked a cell as non-placeable:", randomCell);
             }
-
-            console.log("Placed cell " + randomCell.value + " at " + `(${randomCell.x}, ${randomCell.y})` + " :", randomCell);
-
-            const placeTimes = (randomCell.value as number) - randomCell.currentVision.total;
-            for (let count = 0; count < placeTimes; count++) {
-
-                let directions: (keyof Cell["maxVision"])[] = []; 
-                for (const direction of ["left", "right", "up", "down"] as const) {
-                    if (randomCell.maxVision[direction as keyof Cell["maxVision"]] > 0) {
-                        // Need to check if count is high enough to place in a direction of deniedValues and update accordingly
-                        if (!randomCell.deniedValues[direction as keyof typeof randomCell.deniedValues].includes(randomCell.currentVision[direction] + 1)) {
-                            directions.push(direction as keyof Cell["maxVision"]);
-                        }
-                    }
-                }
-
-                if (directions.length === 0) {
-                    console.error("No available directions to place vision for this cell:", randomCell);
-                    break;
-                }
-
-                const randomDirIndex = Math.floor(Math.random() * directions.length);
-                const direction = directions[randomDirIndex];
-
-                const placed = placeCell(randomCell, direction, "O");
-                if (placed) {
-                    console.log("Placed vision cell in direction", direction, "from cell:", randomCell);
-                    randomCell.maxVision[direction]--;
-                    randomCell.currentVision[direction]++;
-                    randomCell.currentVision.total = randomCell.currentVision.up + randomCell.currentVision.down + randomCell.currentVision.left + randomCell.currentVision.right;
-                } else {
-                    console.error("Failed to place vision cell in direction", direction, "from cell:", randomCell);
-                }
-            }
-
-            let directions: (keyof Cell["maxVision"])[] = ["up", "down", "left", "right"];
-            for (const direction of directions) {
-                const placed = placeCell(randomCell, direction, "X");
-                if (placed) {
-                    console.log("Placed blocking X cell in direction", direction, "from cell:", randomCell);
-                }
-            }
-
-            randomCell.maxVision = { left: 0, right: 0, up: 0, down: 0, total: 0 };
-            updateEmptyCellsVision();
         }
         return grid;
     }
@@ -323,8 +330,8 @@ export default function SingleplayerGrid() {
     useEffect(() => {
         if (gridData.length === 0) return;
         setColorIndex(Array.from({ length: size * size }).map((_, index) => {
-            if (gridData[index].value == "-") return 0;
-            if (gridData[index].value == "X") return 2;
+            if (gridData[index].completedValue == "-") return 0;
+            if (gridData[index].completedValue == "X") return 2;
             return 1;
         }));
     }, [gridData]);
@@ -370,7 +377,7 @@ export default function SingleplayerGrid() {
                             const newColors = [...prev];
                             const nextValue = (newColors[index] + 1) % cellColors.length;
                             newColors[index] = nextValue;
-                            gridData[index].playValue = (["-", "O", "X"] as const)[nextValue];
+                            gridData[index].completedValue = (["-", "O", "X"] as const)[nextValue];
                             console.log(gridData[index]);
                             return newColors;    
                         })
@@ -383,13 +390,13 @@ export default function SingleplayerGrid() {
                             const newColors = [...prev];
                             const nextValue = ((newColors[index] - 1) % cellColors.length) < 0 ? cellColors.length - 1 : (newColors[index] - 1) % cellColors.length;
                             newColors[index] = nextValue;
-                            gridData[index].playValue = (["-", "O", "X"] as const)[nextValue];
+                            gridData[index].completedValue = (["-", "O", "X"] as const)[nextValue];
                             return newColors;
                         })
                         
                     }}
                 >
-                    {gridData[index] && typeof gridData[index].value === "number" ? gridData[index].value : ""}
+                    {gridData[index] && typeof gridData[index].completedValue === "number" ? gridData[index].completedValue : ""}
                 </motion.div>
             ))}
         </div>
