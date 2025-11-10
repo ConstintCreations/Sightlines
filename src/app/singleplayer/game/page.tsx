@@ -3,7 +3,7 @@ import SingleplayerGrid from "@/app/components/singleplayerGrid";
 
 export default function Game() {
     return (
-        <div className="flex flex-col items-center justify-center flex-1 mt-15">
+        <div className="flex flex-col items-center justify-center flex-1">
             <BackArrow />
             <SingleplayerGrid />
         </div>

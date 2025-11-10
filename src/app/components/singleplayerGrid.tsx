@@ -1,7 +1,15 @@
 "use client";
 import { motion, useAnimation, Variants } from "framer-motion";
 import { useSearchParams } from "next/navigation";
-import { use, useEffect, useState } from "react";
+import { useRef, useEffect, useState } from "react";
+import { Space_Mono } from 'next/font/google';
+import CustomLink from "@/app/components/customLink";
+
+const spaceMono = Space_Mono({
+    subsets: ['latin'],
+    weight: ['700'],
+    variable: '--font-space-mono',
+});
 
 export default function SingleplayerGrid() {
     const searchParams = useSearchParams();
@@ -321,19 +329,196 @@ export default function SingleplayerGrid() {
                 console.log("Marked a cell as non-placeable:", randomCell);
             }
         }
+
+        // Solver to ensure unique solution
+        function ensureUniqueSolution(grid: Cell[]): Cell[] | null {
+            let solverGrid:Cell[] = grid.map(cell => ({ ...cell }));
+            function tryPlaceVisionsForCell(cell: Cell): "forced" | "success" | "failure" {
+                // Vision placement logic here
+                return "success";
+            }
+            function gridFull(): boolean {
+                if (solverGrid.some(cell => cell.value === "-")) return false;
+                return true;
+            }
+            /* 
+                for every number cell, from top left to bottom right, do this:
+                    value = cell value
+                    try to place in directions as far from how they are placed in the generated grid as possible
+                    if can't place according to value, backtrack to previous (non forced) cell and try again
+                    a cell is forced if there is only one possible way to place its visions
+                if reach the end, we have a solution 
+                if this solution is different from the generated grid, we change the first differing cell in the generated grid to be non-placeable and restart the process with that grid
+                if by the end we have tried to change every cell to non-placeable and still have multiple solutions, we restart the entire grid generation process
+            */
+            
+            let lastNonForcedCellIndex = -1;
+            let triedPatternsPerCell: Record<number, Set<number>> = {};
+
+            for (let i = 0; i < solverGrid.length; i++) {
+                const cell = solverGrid[i];
+                if (cell.completedValue === "X" || cell.completedValue === "-" || cell.completedValue === "O") continue;
+                // Vision placement logic here
+                let placementResult = tryPlaceVisionsForCell(cell);
+                if (placementResult !== "failure") {
+                    if (placementResult !== "forced") {
+                        // This cell's vision placement wasn't forced
+                        lastNonForcedCellIndex = i;
+                    }
+                    // Successfully placed vision cells for this cell
+                    
+                    if (gridFull()) {
+                        // Found a solution
+                        // check if solution matches original grid
+                        for (let j = 0; j < solverGrid.length; j++) {
+                            if (solverGrid[j].value !== solverGrid[j].completedValue) {
+                                solverGrid[j].value = solverGrid[j].completedValue;
+                                solverGrid[j].neededForCompletion = true;
+                                for (let k = 0; k < solverGrid.length; k++) {
+                                    if (!solverGrid[k].neededForCompletion) {
+                                        // If we have a cell that is not needed for completion, we can try again with this new grid
+                                        return ensureUniqueSolution(solverGrid);
+                                    }
+                                }
+                                // If we reach here, we have tried to change every cell to non-placeable and still have multiple solutions
+                                // We need to restart the entire grid generation process
+                                return null;
+                            }
+                        }
+                        break;
+                    }
+
+                } else {
+                    // Failed to place visions for this cell, need to backtrack
+
+                }
+            }
+
+            // If we reach here, we should have a unique solution
+            return solverGrid;
+        }
+
+        /*
+        let uniqueGrid = ensureUniqueSolution(grid);
+        if (!uniqueGrid) {
+            console.warn("Failed to ensure unique solution, regenerating grid...");
+            return generateGrid(grid.map(cell => ({
+                index: cell.index,
+                x: cell.x,
+                y: cell.y,
+                value: "-",
+                completedValue: "-",
+                patterns: {},
+                neededForCompletion: false,
+                placeable: true,
+            })));
+        }
+        */
         return grid;
     }
 
+    const [savedBestTime, setSavedBestTime] = useState<number>(0);
+
+    useEffect(() => {
+        const stored = localStorage.getItem(`singleplayer-best-${size}`);
+        const best = stored && !isNaN(Number(stored)) ? Number(stored) : 0;
+        setSavedBestTime(best);
+    }, [size]);
+
+
+
+    function checkForCompletion() {
+        for (let i = 0; i < gridData.length; i++) {
+            if (gridData[i].value !== gridData[i].completedValue) {
+                return;
+            }
+        }
+        console.log("Puzzle completed!", gridData);
+        timerStartedRef.current = false;
+        if (savedBestTime === 0 || elapsed < savedBestTime) {
+            localStorage.setItem(`singleplayer-best-${size}`, elapsed.toString());
+        }
+        let score = Number(localStorage.getItem("score"));
+        if (!score || isNaN(score)) {
+            score = 0;
+        }
+        score += size*size;
+        localStorage.setItem("score", score.toString());
+        setTimeout(() => {
+            location.href = `/singleplayer`;
+        }, 1000);
+    }
+    
+    function clickCell(index: number, type: "left" | "right") {
+        if (gridData[index].neededForCompletion || timerStartedRef.current === false) {
+            console.log(gridData[index]);
+            return;
+        };
+        gridData[index].value = (["-", "O", "X"] as const)[(type !== "right" ? ((colorIndex[index] + 1) % cellColors.length) : (((colorIndex[index] - 1) % cellColors.length) < 0 ? cellColors.length - 1 : (colorIndex[index] - 1) % cellColors.length))];
+        setColorIndex((prev) => {
+            const newColors = [...prev];
+            newColors[index] = (type !== "right" ? ((newColors[index] + 1) % cellColors.length) : (((newColors[index] - 1) % cellColors.length) < 0 ? cellColors.length - 1 : (newColors[index] - 1) % cellColors.length));
+            return newColors;    
+        })
+
+        console.log(gridData[index]);
+        checkForCompletion();
+    }
+
+    const [elapsed, setElapsed] = useState(0);
+    const timerStartedRef = useRef(false);
+    const lastTimestampRef = useRef<number | null>(null);
+
+    function startTimer() { // timer based on delta time from request animation frame
+        if (timerStartedRef.current) return;
+        timerStartedRef.current = true;
+        lastTimestampRef.current = null;
+        requestAnimationFrame(updateTimer);
+    }
+
+    function updateTimer(timestamp: number) {
+        if (!timerStartedRef.current) return;
+        if (lastTimestampRef.current !== null) {
+            const delta = timestamp - lastTimestampRef.current;
+            setElapsed((prev) => prev + delta);
+        }
+
+        lastTimestampRef.current = timestamp;
+        requestAnimationFrame(updateTimer);
+    }
+
+    function formatTime(ms: number): string {
+        ms = Math.floor(ms);
+        const totalSeconds = Math.floor(ms / 1000);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds%3600) / 60);
+        const seconds = totalSeconds % 60;
+
+        const msString = (ms % 1000).toString().padStart(3, "0");
+
+        if (hours > 0) {
+            return `${hours}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}.${msString}`;
+        }
+        if (minutes > 0) {
+            return `${minutes}:${seconds.toString().padStart(2, "0")}.${msString}`;
+        }
+        return `${seconds}.${msString}`;
+    }
 
     const cellColors = ["--color-zinc-800", "--color-cyan-700", "--color-orange-700"];
     const [colorIndex, setColorIndex] = useState<number[]>([]);
     useEffect(() => {
         if (gridData.length === 0) return;
         setColorIndex(Array.from({ length: size * size }).map((_, index) => {
-            if (gridData[index].completedValue == "-") return 0;
-            if (gridData[index].completedValue == "X") return 2;
+            if (gridData[index].value == "-") return 0;
+            if (gridData[index].value == "X") return 2;
             return 1;
         }));
+
+        setTimeout(() => {
+            startTimer();
+        }, ((size*size-1)%size + Math.floor((size*size-1)/size)) * delayTime + 250);
+
     }, [gridData]);
 
     const delayTime = -0.0075*size + 0.08;
@@ -359,46 +544,42 @@ export default function SingleplayerGrid() {
     };
 
     return (
-        <div className={`grid gap-2`} style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))` }}>
-            {Array.from({ length: size * size }).map((_, index) => (
-                <motion.div
-                    key={index}
-                    custom={index}
-                    className={`h-[2.2em] aspect-square font-bold text-gray-300 rounded-[30%] flex items-center justify-center cursor-pointer select-none focus:outline-none`}
-                    style={{ fontSize: `${fontSize}em`, backgroundColor: `var(${cellColors[colorIndex[index]]})`,  }}
-                    animate={controls}
-                    whileHover={animationDone ? "hover" : undefined}
-                    whileFocus={animationDone ? "hover" : undefined}
-                    variants={gridVariants}
-                    whileTap={"tap"}
-                    onTap={() => {
-                        setColorIndex((prev) => {
-                            if (gridData[index].neededForCompletion) return prev;
-                            const newColors = [...prev];
-                            const nextValue = (newColors[index] + 1) % cellColors.length;
-                            newColors[index] = nextValue;
-                            gridData[index].completedValue = (["-", "O", "X"] as const)[nextValue];
-                            console.log(gridData[index]);
-                            return newColors;    
-                        })
-                    }}
-                    onContextMenu={(e) => {
-                        e.preventDefault();
-                        setColorIndex((prev) => {
-                            console.log(gridData[index]);
-                            if (gridData[index].neededForCompletion) return prev;
-                            const newColors = [...prev];
-                            const nextValue = ((newColors[index] - 1) % cellColors.length) < 0 ? cellColors.length - 1 : (newColors[index] - 1) % cellColors.length;
-                            newColors[index] = nextValue;
-                            gridData[index].completedValue = (["-", "O", "X"] as const)[nextValue];
-                            return newColors;
-                        })
-                        
-                    }}
-                >
-                    {gridData[index] && typeof gridData[index].completedValue === "number" ? gridData[index].completedValue : ""}
-                </motion.div>
-            ))}
+        <div className="flex flex-col items-center justify-center w-full h-full p-4">
+            <h2 className={`text-4xl font-bold mt-10 mb-3 ${spaceMono.className}`}>
+                {formatTime(elapsed)}
+            </h2>
+            { savedBestTime > 0 ? 
+            
+            <h2 className={`text-3xl font-bold mb-5 ${spaceMono.className}`}>
+                Best: {formatTime(savedBestTime)}
+            </h2> : null
+
+            }
+            
+            <div className={`grid gap-2`} style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))` }}>
+                {Array.from({ length: size * size }).map((_, index) => (
+                    <motion.div
+                        key={index}
+                        custom={index}
+                        className={`h-[2.2em] aspect-square font-bold text-gray-300 rounded-[30%] flex items-center justify-center cursor-pointer select-none focus:outline-none`}
+                        style={{ fontSize: `${fontSize}em`, backgroundColor: `var(${cellColors[colorIndex[index]]})`,  }}
+                        animate={controls}
+                        whileHover={animationDone ? "hover" : undefined}
+                        whileFocus={animationDone ? "hover" : undefined}
+                        variants={gridVariants}
+                        whileTap={"tap"}
+                        onTap={() => {
+                            clickCell(index, "left");
+                        }}
+                        onContextMenu={(e) => {
+                            e.preventDefault();
+                            clickCell(index, "right");
+                        }}
+                    >
+                        {gridData[index] && typeof gridData[index].value === "number" ? gridData[index].value : ""}
+                    </motion.div>
+                ))}
+            </div>
         </div>
     );
 }

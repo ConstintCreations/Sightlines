@@ -1,5 +1,6 @@
 import GridSizeButton from '@/app/components/gridSizeButton';
 import BackArrow from '@/app/components/backArrow';
+import ScoreDisplay from '@/app/components/scoreDisplay';
 
 export default function Singleplayer() {
     return (
@@ -24,9 +25,7 @@ export default function Singleplayer() {
                 </div>
             </div>
 
-            <p className="mt-40 text-gray-500 text-4xl font-bold">
-                0
-            </p>
+            <ScoreDisplay />
             
     </div>
     );
