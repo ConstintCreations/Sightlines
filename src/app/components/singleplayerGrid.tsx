@@ -1,7 +1,7 @@
 "use client";
 import { motion, useAnimation, Variants } from "framer-motion";
 import { useSearchParams } from "next/navigation";
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, Suspense } from "react";
 import { Space_Mono } from 'next/font/google';
 
 const spaceMono = Space_Mono({
