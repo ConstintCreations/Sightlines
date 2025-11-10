@@ -11,7 +11,7 @@ export default function ScoreDisplay() {
     }, []);
 
     return (
-        <p className="mt-40 text-gray-500 text-4xl font-bold">
+        <p className="mt-30 text-gray-500 text-4xl font-bold">
             {!isNaN(savedScore) && savedScore ? savedScore.toString() : "0"}
         </p>
     )

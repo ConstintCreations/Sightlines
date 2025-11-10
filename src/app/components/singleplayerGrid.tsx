@@ -3,7 +3,6 @@ import { motion, useAnimation, Variants } from "framer-motion";
 import { useSearchParams } from "next/navigation";
 import { useRef, useEffect, useState } from "react";
 import { Space_Mono } from 'next/font/google';
-import CustomLink from "@/app/components/customLink";
 
 const spaceMono = Space_Mono({
     subsets: ['latin'],
@@ -139,7 +138,7 @@ export default function SingleplayerGrid() {
             let allowedValuesInDirections = getAllowedValuesInDirections(directionalVisions);
             let min = directionalVisions.up.currentVisible + directionalVisions.down.currentVisible + directionalVisions.left.currentVisible + directionalVisions.right.currentVisible;
             let max = directionalVisions.up.maxVisible + directionalVisions.down.maxVisible + directionalVisions.left.maxVisible + directionalVisions.right.maxVisible;
-            console.log(allowedValuesInDirections, directionalVisions, min, max);
+            //console.log(allowedValuesInDirections, directionalVisions, min, max);
             if (min > size && cell.completedValue !== "-") {
                 cell.placeable = false;
                 return;
@@ -302,7 +301,7 @@ export default function SingleplayerGrid() {
                     continue;
                 };
                 targetCell.completedValue = patternCell.desiredValue;
-                console.log("Placed pattern cell " + patternCell.desiredValue + " at " + `(${patternCell.x}, ${patternCell.y})` + " :", targetCell);
+                //console.log("Placed pattern cell " + patternCell.desiredValue + " at " + `(${patternCell.x}, ${patternCell.y})` + " :", targetCell);
             }
             
         }
@@ -317,16 +316,16 @@ export default function SingleplayerGrid() {
                 randomCell.completedValue = getRandomCellValue(randomCell);
                 randomCell.value = randomCell.completedValue;
                 if (randomCell.completedValue === "X") {
-                    console.log("Placed an X cell, skipping vision placement for this cell:", randomCell);
+                    //console.log("Placed an X cell, skipping vision placement for this cell:", randomCell);
                     continue;
                 }
                 
-                console.log("Placed cell " + randomCell.completedValue + " at " + `(${randomCell.x}, ${randomCell.y})` + " :", randomCell);
+                //console.log("Placed cell " + randomCell.completedValue + " at " + `(${randomCell.x}, ${randomCell.y})` + " :", randomCell);
 
                 placeCellsAccordingToRandomlyGeneratedPattern(randomCell);
             } else {
                 randomCell.placeable = false;
-                console.log("Marked a cell as non-placeable:", randomCell);
+                //console.log("Marked a cell as non-placeable:", randomCell);
             }
         }
 
@@ -428,12 +427,64 @@ export default function SingleplayerGrid() {
 
 
     function checkForCompletion() {
+        if (gridData.some(cell => cell.value === "-")) return;
+        let completedCorrectly = true;
         for (let i = 0; i < gridData.length; i++) {
             if (gridData[i].value !== gridData[i].completedValue) {
-                return;
+                completedCorrectly = false;
             }
         }
-        console.log("Puzzle completed!", gridData);
+
+        if (!completedCorrectly) { // Checks for completion while grids are not unique
+            function getCell(x: number, y: number): Cell | null {
+                if (x < 0 || x >= size || y < 0 || y >= size) return null;
+                return gridData[y * size + x];
+            }
+            for (let i = 1; i < gridData.length; i++) {
+                if (typeof(gridData[i].value) === "number") {
+                    let totalCount = 0;
+                    for (let direction of ["up", "down", "left", "right"] as Direction[]) {
+                        let visibleCount = 0;
+                        for (let j = 1; j < size; j++) {
+                            let xOffset = direction === "left" ? -j : direction === "right" ? j : 0;
+                            let yOffset = direction === "up" ? -j : direction === "down" ? j : 0;
+                            let targetCell = getCell(gridData[i].x + xOffset, gridData[i].y + yOffset);
+                            if (!targetCell || targetCell.value === "X") break;
+                            if ((targetCell.value === "O" || typeof targetCell.value === "number")) {
+                                visibleCount++;
+                            }
+                        }
+                        totalCount += visibleCount;
+                    }
+                    if (totalCount !== gridData[i].value) {
+                        //console.log("Number cell incorrect:", gridData[i], " expected ", gridData[i].value, " got ", totalCount);
+                        return;
+                    }
+                } else if (gridData[i].value === "O") {
+                    let visibleFromNumber = false;
+                    for (let direction of ["up", "down", "left", "right"] as Direction[]) {
+                        for (let j = 1; j < size; j++) {
+                            let xOffset = direction === "left" ? -j : direction === "right" ? j : 0;
+                            let yOffset = direction === "up" ? -j : direction === "down" ? j : 0;
+                            let targetCell = getCell(gridData[i].x + xOffset, gridData[i].y + yOffset);
+                            if (!targetCell || targetCell.value === "X") break;
+                            if (typeof targetCell.value === "number") {
+                                visibleFromNumber = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (!visibleFromNumber) {
+                        //console.log("O cell not visible from any number cell:", gridData[i]);
+                        return;
+                    }
+                } else if (gridData[i].value === "-") { 
+                    //console.log("Empty cell found:", gridData[i]);
+                    return;
+                }
+            }
+        }
+
         timerStartedRef.current = false;
         if (savedBestTime === 0 || elapsed < savedBestTime) {
             localStorage.setItem(`singleplayer-best-${size}`, elapsed.toString());
@@ -448,10 +499,16 @@ export default function SingleplayerGrid() {
             location.href = `/singleplayer`;
         }, 1000);
     }
+
+    useEffect(() => {
+        const handleContextMenu = (e: MouseEvent) => e.preventDefault();
+        document.addEventListener("contextmenu", handleContextMenu);
+        return () => document.removeEventListener("contextmenu", handleContextMenu);
+    }, []);
     
     function clickCell(index: number, type: "left" | "right") {
         if (gridData[index].neededForCompletion || timerStartedRef.current === false) {
-            console.log(gridData[index]);
+            //console.log(gridData[index]);
             return;
         };
         gridData[index].value = (["-", "O", "X"] as const)[(type !== "right" ? ((colorIndex[index] + 1) % cellColors.length) : (((colorIndex[index] - 1) % cellColors.length) < 0 ? cellColors.length - 1 : (colorIndex[index] - 1) % cellColors.length))];
@@ -461,7 +518,7 @@ export default function SingleplayerGrid() {
             return newColors;    
         })
 
-        console.log(gridData[index]);
+        //console.log(gridData[index]);
         checkForCompletion();
     }
 
@@ -571,8 +628,7 @@ export default function SingleplayerGrid() {
                         onTap={() => {
                             clickCell(index, "left");
                         }}
-                        onContextMenu={(e) => {
-                            e.preventDefault();
+                        onContextMenu={() => {
                             clickCell(index, "right");
                         }}
                     >

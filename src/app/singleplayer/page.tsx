@@ -26,6 +26,10 @@ export default function Singleplayer() {
             </div>
 
             <ScoreDisplay />
+            <p className="text-gray-500 mt-10 text-center">
+                * Currently, some grids may have multiple solutions. <br />
+                You only need to find 1.
+            </p>
             
     </div>
     );

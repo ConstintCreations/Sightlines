@@ -10,11 +10,10 @@ const titanOne = Titan_One({
 export default function Home() {
   return (
     <div className="flex flex-col items-center justify-center py-2 flex-1 mt-15">
-      <h1 className={`text-6xl mb-40 ${titanOne.className}`}>
+      <h1 className={`text-6xl mb-30 ${titanOne.className}`}>
           Sightlines
         </h1>
-      <div className="flex flex-col items-center justify-center gap-25">
-        
+      <div className="flex flex-col items-center justify-center gap-20">
         <GameModeButton
           href = "/singleplayer"
           text = "Singleplayer"
@@ -22,6 +21,12 @@ export default function Home() {
         <GameModeButton
           href = "/multiplayer"
           text = "Multiplayer"
+          comingSoon = {true}
+        />
+        <GameModeButton
+          href = "/tutorial"
+          text = "Tutorial"
+          comingSoon = {true}
         />
       </div>
       
