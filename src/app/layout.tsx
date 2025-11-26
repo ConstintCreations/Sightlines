@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Fascinate_Inline, Zain } from 'next/font/google';
 import Footer from "@/app/components/footer";
-import { ThemeProvider } from "./components/theme";
+import { ThemeProvider, ThemedAdditions } from "./components/theme";
 
 const fascinateInline = Fascinate_Inline({
   subsets: ['latin'],
@@ -50,6 +50,7 @@ export default function RootLayout({
           }}
         />
         <ThemeProvider>
+          <ThemedAdditions />
           {children}
           <Footer />
         </ThemeProvider>
