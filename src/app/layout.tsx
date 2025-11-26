@@ -27,10 +27,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning  data-theme="regular">
       <body
         className={`${zain.variable} antialiased min-h-screen flex flex-col`}
       >
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              const theme = localStorage.getItem('theme');
+              if (theme) document.documentElement.dataset.theme = theme;
+            `,
+          }}
+        />
         <ThemeProvider>
           {children}
           <Footer />

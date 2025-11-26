@@ -562,7 +562,7 @@ export default function SingleplayerGrid() {
         return `${seconds}.${msString}`;
     }
 
-    const cellColors = ["--empty-cell", "--o-tile-unfocused", "--x-tile-unfocused"];
+    const cellColors = ["--empty-cell", "--o-cell", "--x-cell"];
     const [colorIndex, setColorIndex] = useState<number[]>([]);
     useEffect(() => {
         if (gridData.length === 0) return;

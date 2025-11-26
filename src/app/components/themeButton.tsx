@@ -6,7 +6,7 @@ import { useTheme } from "./theme";
 
 export default function ThemeButton() {
     const { theme, setTheme } = useTheme();
-    const themes = ["default", "winter"];
+    const themes = ["regular", "winter"];
 
     const cycleTheme = () => {
         setTheme(themes[(themes.indexOf(theme) + 1) % themes.length]);
