@@ -35,7 +35,17 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               const theme = localStorage.getItem('theme');
-              if (theme) document.documentElement.dataset.theme = theme;
+              if (theme) {
+                document.documentElement.dataset.theme = theme;
+              } else {
+                const month = new Date().getMonth();
+                if (month === 11) {
+                  localStorage.setItem('theme', 'winter'); 
+                  document.documentElement.dataset.theme = 'winter';
+                } else {
+                  localStorage.setItem('theme', 'regular');
+                }
+              }
             `,
           }}
         />
