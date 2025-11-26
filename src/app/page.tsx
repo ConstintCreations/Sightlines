@@ -1,6 +1,7 @@
 import { Titan_One } from 'next/font/google';
 import GameModeButton from './components/gamemodeButton';
 import ThemeButton from './components/themeButton';
+import TitleTagline from './components/titleTagline';
 
 const titanOne = Titan_One({
   subsets: ['latin'],
@@ -13,8 +14,9 @@ export default function Home() {
     <div className="flex flex-col items-center justify-center py-2 flex-1 mt-15">
       <ThemeButton/>
       <h1 className={`text-6xl mb-30 ${titanOne.className}`}>
-          Sightlines
-        </h1>
+        <span>Sightlines</span>
+        <TitleTagline />
+      </h1>
       <div className="flex flex-col items-center justify-center gap-20">
         <GameModeButton
           href = "/singleplayer"
