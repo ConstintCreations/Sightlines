@@ -2,11 +2,14 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPalette } from '@fortawesome/free-solid-svg-icons';
 import { motion } from "framer-motion";
+import { useTheme } from "./theme";
 
 export default function ThemeButton() {
+    const { theme, setTheme } = useTheme();
+    const themes = ["default", "winter"];
 
-    function cycleTheme() {
-        
+    const cycleTheme = () => {
+        setTheme(themes[(themes.indexOf(theme) + 1) % themes.length]);
     }
 
     return (

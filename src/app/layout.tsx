@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Fascinate_Inline, Zain } from 'next/font/google';
 import Footer from "@/app/components/footer";
+import { ThemeProvider } from "./components/theme";
 
 const fascinateInline = Fascinate_Inline({
   subsets: ['latin'],
@@ -30,8 +31,10 @@ export default function RootLayout({
       <body
         className={`${zain.variable} antialiased min-h-screen flex flex-col`}
       >
-        {children}
-        <Footer />
+        <ThemeProvider>
+          {children}
+          <Footer />
+        </ThemeProvider>
       </body>
     </html>
   );
