@@ -3,6 +3,15 @@
 :root {
   --background: #1b1b1b;
   --foreground: #ededed;
+
+  --unfocused-text: var(--color-gray-400);
+  --focused-text: var(--color-gray-200);
+  --alt-text: var(--color-gray-500);
+  --o-tile-unfocused: var(--color-cyan-700);
+  --o-tile-focused: var(--color-cyan-600);
+  --x-tile-unfocused: var(--color-orange-700);
+  --x-tile-focused: var(--color-orange-600);
+  --empty-cell: var(--color-zinc-800);
 }
 
 @theme inline {
@@ -20,4 +29,32 @@ body {
 
 html {
   transition: background-color 0.3s, color 0.3s;
+}
+
+[data-theme="default"] {
+  --background: #1b1b1b;
+  --foreground: #ededed;
+
+  --unfocused-text: var(--color-gray-400);
+  --focused-text: var(--color-gray-200);
+  --alt-text: var(--color-gray-500);
+  --o-tile-unfocused: var(--color-cyan-700);
+  --o-tile-focused: var(--color-cyan-600);
+  --x-tile-unfocused: var(--color-orange-700);
+  --x-tile-focused: var(--color-orange-600);
+  --empty-cell: var(--color-zinc-800);
+}
+
+[data-theme="winter"] {
+  --background: #1b1b1b;
+  --foreground: #ededed;
+
+  --unfocused-text: var(--color-gray-400);
+  --focused-text: var(--color-gray-200);
+  --alt-text: var(--color-gray-500);
+  --o-tile-unfocused: var(--color-cyan-700);
+  --o-tile-focused: var(--color-cyan-600);
+  --x-tile-unfocused: var(--color-orange-700);
+  --x-tile-focused: var(--color-orange-600);
+  --empty-cell: var(--color-zinc-800);
 }

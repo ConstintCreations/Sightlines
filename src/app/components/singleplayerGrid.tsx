@@ -1,7 +1,7 @@
 "use client";
 import { motion, useAnimation, Variants } from "framer-motion";
 import { useSearchParams } from "next/navigation";
-import { useRef, useEffect, useState, Suspense } from "react";
+import { useRef, useEffect, useState } from "react";
 import { Space_Mono } from 'next/font/google';
 
 const spaceMono = Space_Mono({
@@ -562,7 +562,7 @@ export default function SingleplayerGrid() {
         return `${seconds}.${msString}`;
     }
 
-    const cellColors = ["--color-zinc-800", "--color-cyan-700", "--color-orange-700"];
+    const cellColors = ["--empty-cell", "--o-tile-unfocused", "--x-tile-unfocused"];
     const [colorIndex, setColorIndex] = useState<number[]>([]);
     useEffect(() => {
         if (gridData.length === 0) return;
@@ -618,7 +618,7 @@ export default function SingleplayerGrid() {
                     <motion.div
                         key={index}
                         custom={index}
-                        className={`h-[2.2em] aspect-square font-bold text-gray-300 rounded-[30%] flex items-center justify-center cursor-pointer select-none focus:outline-none`}
+                        className={`h-[2.2em] aspect-square font-bold text-[var(--focused-text)] rounded-[30%] flex items-center justify-center cursor-pointer select-none focus:outline-none`}
                         style={{ fontSize: `${fontSize}em`, backgroundColor: `var(${cellColors[colorIndex[index]]})`,  }}
                         animate={controls}
                         whileHover={animationDone ? "hover" : undefined}

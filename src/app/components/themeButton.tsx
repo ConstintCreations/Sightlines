@@ -13,9 +13,9 @@ export default function ThemeButton() {
     }
 
     return (
-        <motion.button className="fixed top-15 right-15 cursor-pointer text-gray-400"
-        whileHover={{x:-10, scale: 1.1, color: "var(--color-gray-200)"}}
-        whileFocus={{x:-10, scale: 1.1, color: "var(--color-gray-200)"}}
+        <motion.button className="fixed top-15 right-15 cursor-pointer text-[var(--unfocused-text)] hover:text-[var(--focused-text)] focus:outline-none focus-visible:text-[var(--focused-text)] transition-colors duration-300"
+        whileHover={{x:-10, scale: 1.1}}
+        whileFocus={{x:-10, scale: 1.1}}
         whileTap={{x:-5, scale: 0.95}}
         transition={{ type: "spring", stiffness: 300 }}
         onClick={cycleTheme}

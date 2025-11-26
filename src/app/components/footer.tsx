@@ -2,7 +2,7 @@ import CustomLink from "@/app/components/customLink";
 
 export default function Footer() {
     return (
-        <footer className="w-full py-4 border-t border-gray-500 mt-8 flex flex justify-center items-center text-sm text-gray-500 mt-15">
+        <footer className="w-full py-4 border-t border-[var(--alt-text)] mt-8 flex flex justify-center items-center text-sm text-[var(--alt-text)] mt-15">
             Created by 
             <CustomLink href="https://github.com/ConstintCreations" text="ConstintCreations" />
             | Inspired by 
