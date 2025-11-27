@@ -1,10 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
-export default function ScoreDisplay() {
+export default function ScoreDisplay( { singleplayer }: { singleplayer: boolean } ) {
     const [savedScore, setSavedScore] = useState<number>(0);
 
     useEffect(() => {
-        const score = localStorage.getItem('score');
+        const score = singleplayer ? localStorage.getItem('score') : localStorage.getItem('elo');
         if (score) {
             setSavedScore(parseInt(score));
         }
@@ -12,7 +12,7 @@ export default function ScoreDisplay() {
 
     return (
         <p className="mt-30 text-[var(--alt-text)] text-4xl font-bold">
-            {!isNaN(savedScore) && savedScore ? savedScore.toString() : "0"}
+            {!isNaN(savedScore) && savedScore ? savedScore.toString() : singleplayer ? "0" : "1000"}
         </p>
     )
 }

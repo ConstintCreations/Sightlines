@@ -25,7 +25,6 @@ export default function Home() {
         <GameModeButton
           href = "/multiplayer"
           text = "Multiplayer"
-          comingSoon = {true}
         />
         <GameModeButton
           href = "/tutorial"

@@ -12,7 +12,7 @@ const spaceMono = Space_Mono({
 
 export default function SingleplayerGrid() {
     const searchParams = useSearchParams();
-    const inSize = searchParams.get("size");
+    const inSize = searchParams?.get("size");
 
     useEffect(() => {
         if (!inSize || isNaN(Number(inSize)) || Number(inSize) < 4 || Number(inSize) > 9 || !Number.isInteger(Number(inSize))) {
