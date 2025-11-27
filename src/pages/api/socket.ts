@@ -588,8 +588,17 @@ export default function SocketHandler(request: any, response: any) {
                         gameSize = newUser.size as number;
                     }
 
+                    console.log(`Starting game of size ${gameSize} between ${newUser.id} and ${matchedUser.id}`);
+
                     const [newUserWinEloChange, newUserLossEloChange] = calculateEloGainLoss(newUser, matchedUser, gameSize);
                     const [matchedUserWinEloChange, matchedUserLossEloChange] = calculateEloGainLoss(matchedUser, newUser, gameSize);
+
+                    console.log("Elo calculations:", {
+                        newUserWinEloChange,
+                        newUserLossEloChange,
+                        matchedUserWinEloChange,
+                        matchedUserLossEloChange
+                    });
 
                     // Generate a grid here
                     const newGrid: Cell[] = Array.from({ length: gameSize * gameSize }, (_, i) => ({
@@ -614,12 +623,16 @@ export default function SocketHandler(request: any, response: any) {
                         newGamesPlayed: newUser.gamesPlayed + 1
                     });
 
+                    console.log("Emitted playGame to ", newUser.id, " with grid");
+
                     io.to(matchedUser.id).emit("playGame", {
                         size: gameSize,
                         grid: simplifiedGrid,
                         tempElo: matchedUserLossEloChange.newElo, // both start as losers for if they quit early
                         newGamesPlayed: matchedUser.gamesPlayed + 1
                     });
+
+                    console.log("Emitted playGame to ", matchedUser.id, " with grid");
 
                     socket.on("timerStopped", (data) => {
                         const elapsedTime = data.elapsed;
