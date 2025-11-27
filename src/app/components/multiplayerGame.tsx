@@ -267,6 +267,12 @@ export default function MultiplayerGame() {
         tap: { scale: 1.15, y:-16, transition: { type: "spring", stiffness: 300 }},
     };
 
+    useEffect(() => {
+        const handleContextMenu = (e: MouseEvent) => e.preventDefault();
+        document.addEventListener("contextmenu", handleContextMenu);
+        return () => document.removeEventListener("contextmenu", handleContextMenu);
+    }, []);
+
     return (
         <div className="flex flex-col items-center justify-center flex-1">
             {status !== "playing" && <h1 className="text-6xl font-bold">{statusMessages[status]}</h1>}
