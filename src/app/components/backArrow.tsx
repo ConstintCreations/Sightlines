@@ -6,9 +6,10 @@ import { usePathname } from "next/navigation";
 
 export default function BackArrow(data: { href?: string;}) {
     const pathname = usePathname();
+    const safePath = pathname ? pathname : "/";
     return (
         <motion.a
-            href={data.href ? data.href : pathname.split("/").length <= 2 ? "/" : `/${pathname.split("/")[1]}`}
+            href={data.href ? data.href : safePath.split("/").length <= 2 ? "/" : `/${safePath.split("/")[1]}`}
             className="text-3xl text-[var(--unfocused-text)] hover:text-[var(--focused-text)] hover:cursor-pointer fixed top-10 left-10 focus:outline-none focus-visible:text-[var(--focused-text)] transition-colors duration-300"
             whileHover= {{scale: 1.1, x:-5}}
             whileFocus= {{scale: 1.1, x:-5}}
