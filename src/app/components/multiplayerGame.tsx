@@ -44,10 +44,6 @@ export default function MultiplayerGame() {
                 setStatus("waiting");
             });
 
-            socketRef.current.on("matchFound", () => {
-                setStatus("joining");
-            });
-
             socketRef.current.on("playGame", (data) => {
                 localStorage.setItem("elo", data.tempElo.toString());
                 localStorage.setItem("multiplayerGamesPlayed", data.newGamesPlayed.toString());
@@ -61,6 +57,7 @@ export default function MultiplayerGame() {
             });
 
             socketRef.current.on("gameFinished", (data) => {
+                if (gameEnded) return;
                 setGameEnded(true);
                 setWon(data.won);
                 localStorage.setItem("elo", data.newElo.toString());
@@ -76,8 +73,8 @@ export default function MultiplayerGame() {
     
     }, [inSize]);
 
-    type newEloCalculation = { totalDifference: number; difference: number; size: number; randomFactor: number; newPlayerMultiplier: boolean; newElo: number; };
-    type Statuses = "connecting" | "waiting" | "joining" | "playing";
+    type newEloCalculation = { totalDifference: number; baseChange: number; size: number; randomFactor: number; newPlayerMultiplier: boolean; newElo: number; };
+    type Statuses = "connecting" | "waiting" | "playing";
     const [status, setStatus] = useState<Statuses>("connecting");
     const [gameEnded, setGameEnded] = useState<boolean>(false);
     const [won, setWon] = useState<boolean | null>(null);
@@ -86,7 +83,6 @@ export default function MultiplayerGame() {
     const statusMessages: Record<Statuses, string> = {
         "connecting": "Connecting to server...",
         "waiting": "Waiting for another player...",
-        "joining": "Joining game...",
         "playing": ""
     };
 
@@ -118,15 +114,20 @@ export default function MultiplayerGame() {
         if (lastTimestampRef.current !== null) {
             const delta = timestamp - lastTimestampRef.current;
             setElapsed((prev) => prev + delta);
+            // Check if other player has finished and send time to server
+            if (otherPlayerFinishedTime !== null && elapsed + delta >= otherPlayerFinishedTime) {
+                stopTimer(false);
+                return;
+            }
         }
 
         lastTimestampRef.current = timestamp;
         requestAnimationFrame(updateTimer);
     }
 
-    function stopTimer() {
+    function stopTimer(completed = true) {
         timerStartedRef.current = false;
-        socketRef.current?.emit("timerStopped", { elapsed: elapsed, gridData: gridData });
+        socketRef.current?.emit("timerStopped", { elapsed: elapsed, gridData: gridData, completed: completed });
     }
 
     type Direction = "up" | "down" | "left" | "right";
