@@ -11,7 +11,7 @@ export default function ScoreDisplay( { singleplayer }: { singleplayer: boolean 
     }, []);
 
     return (
-        <p className="mt-30 text-[var(--alt-text)] text-4xl font-bold">
+        <p className={`${singleplayer == true ? "mt-30" : "mt-20"} text-[var(--alt-text)] text-4xl font-bold`}>
             {!isNaN(savedScore) && savedScore ? savedScore.toString() : singleplayer ? "0" : "1000"}
         </p>
     )

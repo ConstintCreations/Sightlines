@@ -9,7 +9,7 @@ export default function Multiplayer() {
             <h1 className={`text-6xl mb-10 font-bold`}>
                 Multiplayer
             </h1>
-            <h2 className="text-3xl mb-30 text-[var(--alt-text)]">
+            <h2 className="text-3xl mb-20 text-[var(--alt-text)]">
                 Select a size to queue...
             </h2>
             <div className="flex flex-col items-center justify-center gap-3">
@@ -23,6 +23,7 @@ export default function Multiplayer() {
                     <GridSizeButton size={8} singleplayer={false} />
                     <GridSizeButton size={9} singleplayer={false} />
                 </div>
+                <GridSizeButton size={"any"} singleplayer={false} />
             </div>
 
             <ScoreDisplay singleplayer={false} />
