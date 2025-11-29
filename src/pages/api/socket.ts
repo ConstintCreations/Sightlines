@@ -19,9 +19,20 @@ export default function SocketHandler(request: any, response: any) {
         newEloCalculation?: newEloCalculation;
         finishedTime?: number;
         completed: boolean;
+        gameId?: string;
     }
 
     let queue: User[] = [];
+
+    type Game = {
+        id: string;
+        players: User[];
+        size: number;
+        grid: any;
+        state: "ongoing" | "completed";
+    }
+
+    let games: { [id: string]: Game } = {};
 
     function calculateEloGainLoss(player: User, opponent: User, size: number): [newEloCalculation, newEloCalculation] {
         const playerElo = player.elo;
@@ -616,6 +627,21 @@ export default function SocketHandler(request: any, response: any) {
                     const grid:Cell[] = generateGrid(newGrid, gameSize);
                     const simplifiedGrid:SimpleCell[] = grid.map(cell => ({ index: cell.index, x: cell.x, y: cell.y, value: cell.value, completedValue: cell.completedValue, neededForCompletion: cell.neededForCompletion }));
 
+                    // Store game state
+                    const gameId = `${newUser.id}-${matchedUser.id}-${Date.now()}`;
+                    const newGame: Game = {
+                        id: gameId,
+                        players: [newUser, matchedUser],
+                        size: gameSize,
+                        grid: grid,
+                        state: "ongoing"
+                    };
+
+                    games[gameId] = newGame;
+
+                    newUser.gameId = gameId;
+                    matchedUser.gameId = gameId;
+
                     io.to(newUser.id).emit("playGame", {
                         size: gameSize,
                         grid: simplifiedGrid,
@@ -710,6 +736,19 @@ export default function SocketHandler(request: any, response: any) {
         socket.on("disconnect", () => {
             console.log("Client disconnected:", socket.id);
             queue = queue.filter(user => user.id !== socket.id);
+
+            for (const gameId in games) {
+                const game = games[gameId];
+                if (game.players.some(player => player.id === socket.id) && game.state === "ongoing") {
+                    const otherPlayer = game.players.find(player => player.id !== socket.id)!;
+                    const [otherPlayerWinEloChange, otherPlayerLossEloChange] = calculateEloGainLoss(otherPlayer, game.players.find(player => player.id === socket.id)!, game.size);
+
+                    io.to(otherPlayer.id).emit("gameFinished", { won: true, newElo: otherPlayerWinEloChange.newElo, newEloCalculation: otherPlayerWinEloChange });
+                    game.state = "completed";
+                    console.log(`Notified ${otherPlayer.id} of win due to opponent disconnect.`);
+                    delete games[gameId];
+                }
+            }
         });
 
     });
