@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, use } from "react";
 import { io, Socket } from "socket.io-client";
 import { useSearchParams } from "next/navigation";
 import { motion, useAnimation, Variants, AnimatePresence } from "framer-motion";
@@ -48,6 +48,10 @@ export default function MultiplayerGame() {
                 setStatus(prev => prev === "connecting" ? "waiting" : prev);
             });
 
+            socketRef.current.on("areYouReady", () => {
+                setAskedIfReady(true);
+            });
+
             socketRef.current.on("playGame", (data) => {
                 console.log("Received playGame data:", data);
                 localStorage.setItem("elo", data.tempElo.toString());
@@ -84,6 +88,7 @@ export default function MultiplayerGame() {
     type newEloCalculation = { totalDifference: number; baseChange: number; size: number; randomFactor: number; newPlayerMultiplier: boolean; newElo: number; };
     type Statuses = "connecting" | "waiting" | "playing";
     const [status, setStatus] = useState<Statuses>("connecting");
+    const [askedIfReady, setAskedIfReady] = useState<boolean>(false);
     const [gameEnded, setGameEnded] = useState<boolean>(false);
     const [won, setWon] = useState<boolean | null>(null);
     const [otherForfeit, setOtherForfeit] = useState<boolean>(false);
@@ -94,6 +99,14 @@ export default function MultiplayerGame() {
         "waiting": "Waiting for another player...",
         "playing": ""
     };
+
+    
+    useEffect(() => {
+        if (askedIfReady && status === "waiting") {
+            socketRef.current?.emit("readyConfirmation", { userId: socketRef.current.id });
+            console.log("Sent ready confirmation to server");
+        }
+    }, [askedIfReady, status]);
 
     type Cell = {
         index: number;
@@ -123,11 +136,6 @@ export default function MultiplayerGame() {
         if (lastTimestampRef.current !== null) {
             const delta = timestamp - lastTimestampRef.current;
             setElapsed((prev) => prev + delta);
-            // Check if other player has finished and send time to server
-            if (otherPlayerFinishedTime !== null && elapsed + delta >= otherPlayerFinishedTime) {
-                stopTimer(false);
-                return;
-            }
         }
 
         lastTimestampRef.current = timestamp;
@@ -135,12 +143,23 @@ export default function MultiplayerGame() {
     }
 
     function stopTimer(completed = true) {
+        if (!timerStartedRef.current) return;
         timerStartedRef.current = false;
+        console.log("Stopping timer at elapsed time:", elapsed, " Completed:", completed);
         socketRef.current?.emit("timerStopped", { elapsed: elapsed, gridData: gridData, completed: completed });
     }
 
     type Direction = "up" | "down" | "left" | "right";
 
+    // Stop timer and report completion to server if the other player completes the grid and their time < yours
+
+    useEffect(() => {
+        if (otherPlayerFinishedTime !== null && timerStartedRef.current === true) {
+            if (otherPlayerFinishedTime < elapsed) {
+                stopTimer(false);
+            }
+        }
+    }, [otherPlayerFinishedTime, elapsed]);
 
     function checkForCompletion() {
         if (gridData.some(cell => cell.value === "-")) return;
