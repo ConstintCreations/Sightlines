@@ -2,8 +2,10 @@
 import { useEffect, useState, useRef } from "react";
 import { io, Socket } from "socket.io-client";
 import { useSearchParams } from "next/navigation";
-import { motion, useAnimation, Variants } from "framer-motion";
+import { motion, useAnimation, Variants, AnimatePresence } from "framer-motion";
 import { Space_Mono } from "next/font/google";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faChevronRight } from "@fortawesome/free-solid-svg-icons";
 
 const spaceMono = Space_Mono({ subsets: ['latin'], weight: '700' });
 
@@ -65,6 +67,7 @@ export default function MultiplayerGame() {
                 console.log("Game finished:", data);
                 setGameEnded(true);
                 setWon(data.won);
+                setOtherForfeit(data.otherForfeit);
                 localStorage.setItem("elo", data.newElo.toString());
                 setNewEloCalc(data.newEloCalculation);
             });
@@ -83,6 +86,7 @@ export default function MultiplayerGame() {
     const [status, setStatus] = useState<Statuses>("connecting");
     const [gameEnded, setGameEnded] = useState<boolean>(false);
     const [won, setWon] = useState<boolean | null>(null);
+    const [otherForfeit, setOtherForfeit] = useState<boolean>(false);
     const [newEloCalc, setNewEloCalc] = useState<newEloCalculation | null>(null);
     const [size, setSize] = useState<number>(4);
     const statusMessages: Record<Statuses, string> = {
@@ -278,6 +282,8 @@ export default function MultiplayerGame() {
         return () => document.removeEventListener("contextmenu", handleContextMenu);
     }, []);
 
+    const [showBreakdown, setShowBreakdown] = useState(false);
+
     return (
         <div className="flex flex-col items-center justify-center flex-1">
             {status !== "playing" && <h1 className="text-6xl font-bold">{statusMessages[status]}</h1>}
@@ -313,11 +319,59 @@ export default function MultiplayerGame() {
                 </div>
             )}
             {gameEnded === true && (
-                <div>
-                    <h1 className="text-5xl font-bold mb-4">{won ? "You won!" : "You lost!"}</h1>
+                <div className="flex flex-col items-center justify-center">
+                    <h1 className={`text-5xl font-bold ${otherForfeit ? "mb-2" : "mb-8"}`}>{won ? "You won!" : "You lost!"}</h1>
+                    <h1 className="text-3xl font-bold mb-8 text-[var(--alt-text)]">{otherForfeit ? "(By Forfeit)" : ""}</h1>
                     {newEloCalc && (
-                        <div className="text-xl">
-                            {newEloCalc.newElo}
+                        <div className="text-2xl font-bold flex flex-col items-center justify-center">
+                            <div>
+                                {newEloCalc.newElo} 
+                                <span className="ml-2 text-[var(--alt-text)]">
+                                    ({newEloCalc.totalDifference > 0 ? "+" : ""}{newEloCalc.totalDifference})
+                                </span>
+                            </div>
+                            
+                            <div className="relative">
+                                <button className="flex flex-row items-center justify-center text-xl mt-4 gap-3 group focus:outline-none cursor-pointer" onClick={() => setShowBreakdown(prev => !prev)}>
+                                        <FontAwesomeIcon icon={faChevronRight} className={`size-5! mb-0.5 text-[var(--unfocused-text)] group-hover:text-[var(--focused-text)] group-focus-visible:text-[var(--focused-text)] transition-all duration-300 ease-in-out ${showBreakdown ? "rotate-90 group-hover:rotate-0 group-focus-visible:rotate-0" : "rotate-0 group-hover:rotate-90 group-focus-visible:rotate-90"}`}/>
+                                    <p className="font-normal text-center text-[var(--unfocused-text)] group-hover:text-[var(--focused-text)] group-focus-visible:text-[var(--focused-text)] transition-colors duration-300 ease-in-out">
+                                        Elo Breakdown
+                                    </p>
+                                </button>
+                                <AnimatePresence>
+                                    {showBreakdown &&
+                                        <motion.div className="text-lg font-normal text-[var(--alt-text)] mt-2 absolute flex-col items-end justify-center w-full"
+                                            initial={{height: 0, opacity: 0, marginTop: 0}}
+                                            animate={{height: "auto", opacity: 1, marginTop: "0.5rem"}}
+                                            exit={{height: 0, opacity: 0, marginTop: 0}}
+                                            transition={{ duration: 0.15 }}
+                                        >
+                                            <div className="flex flex-row items-center justify-between">
+                                                <p>Base Change: </p>
+                                                <p>{newEloCalc.baseChange > 0 ? "+" : ""}{newEloCalc.baseChange}</p>
+                                            </div>
+                                            <div className="flex flex-row items-center justify-between">
+                                                <p>Random Factor: </p>
+                                                <p>{newEloCalc.randomFactor > 0 ? "+" : ""}{newEloCalc.randomFactor}</p>
+                                            </div>
+                                            <div className="flex flex-row items-center justify-between">
+                                                <p>Size Multiplier: </p>
+                                                <p>x{newEloCalc.size}</p>
+                                            </div>
+                                            {newEloCalc.newPlayerMultiplier && 
+                                                <div className="flex flex-row items-center justify-between">
+                                                    <p>New Player: </p>
+                                                    <p>x{won ? "2" : "0.5"}</p>
+                                                </div>
+                                            }
+                                            <div className="flex flex-row items-center justify-between text-[var(--unfocused-text)] mt-1 border-t pt-1">
+                                                <p>Total: </p>
+                                                <p>{newEloCalc.totalDifference >= 0 ? "+" : ""}{newEloCalc.totalDifference}</p>
+                                            </div>
+                                        </motion.div>
+                                    }
+                                </AnimatePresence>
+                            </div>
                         </div>
                     )}
                 </div>

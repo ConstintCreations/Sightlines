@@ -53,7 +53,7 @@ export default function SocketHandler(request: any, response: any) {
             totalDifference: 0,
             baseChange: 0,
             size: 1 - 0.05*(size-4),
-            randomFactor: randomFactor,
+            randomFactor: -randomFactor,
             newPlayerMultiplier: player.gamesPlayed <= 5,
             newElo: 0
         };
@@ -67,7 +67,7 @@ export default function SocketHandler(request: any, response: any) {
         lossEloChange.newElo = playerElo - Math.floor((lossEloChange.baseChange  + lossEloChange.randomFactor) * lossEloChange.size * (lossEloChange.newPlayerMultiplier ? 0.5 : 1));
 
         winEloChange.totalDifference = winEloChange.newElo - playerElo;
-        lossEloChange.totalDifference = lossEloChange.newElo - playerElo;
+        lossEloChange.totalDifference = playerElo - lossEloChange.newElo;
 
         return [winEloChange, lossEloChange];
     }
@@ -686,33 +686,36 @@ export default function SocketHandler(request: any, response: any) {
 
                         if (typeof otherUser.finishedTime === "number") {
                             if (user.completed && otherUser.completed) {
+                                games[gameId].state = "completed";
+                                console.log(`Both players completed the game. Determining winner between ${user.id} and ${otherUser.id}.`);
+                                delete games[gameId];
                                 // Both completed, determine winner
                                 if (user.finishedTime! <= otherUser.finishedTime!) {
                                     // User wins
 
-                                    io.to(user.id).emit("gameFinished", { won: true, newElo: newUserWinEloChange.newElo, newEloCalculation: newUserWinEloChange });
-                                    io.to(otherUser.id).emit("gameFinished", { won: false, newElo: matchedUserLossEloChange.newElo, newEloCalculation: matchedUserLossEloChange });
+                                    io.to(user.id).emit("gameFinished", { won: true, newElo: newUserWinEloChange.newElo, newEloCalculation: newUserWinEloChange, otherForfeit: false });
+                                    io.to(otherUser.id).emit("gameFinished", { won: false, newElo: matchedUserLossEloChange.newElo, newEloCalculation: matchedUserLossEloChange, otherForfeit: false });
                                 } else if (user.finishedTime! > otherUser.finishedTime!) {
                                     // Other user wins
 
-                                    io.to(user.id).emit("gameFinished", { won: false, newElo: newUserLossEloChange.newElo, newEloCalculation: newUserLossEloChange });
-                                    io.to(otherUser.id).emit("gameFinished", { won: true, newElo: matchedUserWinEloChange.newElo, newEloCalculation: matchedUserWinEloChange });
+                                    io.to(user.id).emit("gameFinished", { won: false, newElo: newUserLossEloChange.newElo, newEloCalculation: newUserLossEloChange, otherForfeit: false });
+                                    io.to(otherUser.id).emit("gameFinished", { won: true, newElo: matchedUserWinEloChange.newElo, newEloCalculation: matchedUserWinEloChange, otherForfeit: false });
                                 } 
                             } else if (user.completed && !otherUser.completed) {
                                 // User wins by completion
 
-                                io.to(user.id).emit("gameFinished", { won: true, newElo: newUserWinEloChange.newElo, newEloCalculation: newUserWinEloChange });
-                                io.to(otherUser.id).emit("gameFinished", { won: false, newElo: matchedUserLossEloChange.newElo, newEloCalculation: matchedUserLossEloChange });
+                                io.to(user.id).emit("gameFinished", { won: true, newElo: newUserWinEloChange.newElo, newEloCalculation: newUserWinEloChange, otherForfeit: false });
+                                io.to(otherUser.id).emit("gameFinished", { won: false, newElo: matchedUserLossEloChange.newElo, newEloCalculation: matchedUserLossEloChange, otherForfeit: false });
                             } else if (!user.completed && otherUser.completed) {
                                 // Other user wins by completion
 
-                                io.to(user.id).emit("gameFinished", { won: false, newElo: newUserLossEloChange.newElo, newEloCalculation: newUserLossEloChange });
-                                io.to(otherUser.id).emit("gameFinished", { won: true, newElo: matchedUserWinEloChange.newElo, newEloCalculation: matchedUserWinEloChange });
+                                io.to(user.id).emit("gameFinished", { won: false, newElo: newUserLossEloChange.newElo, newEloCalculation: newUserLossEloChange, otherForfeit: false });
+                                io.to(otherUser.id).emit("gameFinished", { won: true, newElo: matchedUserWinEloChange.newElo, newEloCalculation: matchedUserWinEloChange, otherForfeit: false });
                             } else {
                                 // Both failed to complete, no elo change
 
-                                io.to(user.id).emit("gameFinished", { won: false, newElo: user.elo, newEloCalculation: null });
-                                io.to(otherUser.id).emit("gameFinished", { won: false, newElo: otherUser.elo, newEloCalculation: null });
+                                io.to(user.id).emit("gameFinished", { won: false, newElo: user.elo, newEloCalculation: null, otherForfeit: false });
+                                io.to(otherUser.id).emit("gameFinished", { won: false, newElo: otherUser.elo, newEloCalculation: null, otherForfeit: false });
                             }
 
                         } else {
@@ -720,8 +723,11 @@ export default function SocketHandler(request: any, response: any) {
                             setTimeout(() => {
                                 if (typeof otherUser.finishedTime !== "number") {
                                     if (user.completed) {
-                                        io.to(user.id).emit("gameFinished", { won: true, newElo: newUserWinEloChange.newElo, newEloCalculation: newUserWinEloChange });
-                                        io.to(otherUser.id).emit("gameFinished", { won: false, newElo: matchedUserLossEloChange.newElo, newEloCalculation: matchedUserLossEloChange });
+                                        io.to(user.id).emit("gameFinished", { won: true, newElo: newUserWinEloChange.newElo, newEloCalculation: newUserWinEloChange, otherForfeit: false });
+                                        io.to(otherUser.id).emit("gameFinished", { won: false, newElo: matchedUserLossEloChange.newElo, newEloCalculation: matchedUserLossEloChange, otherForfeit: false });
+                                        games[gameId].state = "completed";
+                                        console.log(`Notified ${user.id} of win as other player did not finish in time.`);
+                                        delete games[gameId];
                                     }
                                 }
                             }, 3000);
@@ -740,11 +746,10 @@ export default function SocketHandler(request: any, response: any) {
             for (const gameId in games) {
                 const game = games[gameId];
                 if (game.players.some(player => player.id === socket.id) && game.state === "ongoing") {
+                    game.state = "completed";
                     const otherPlayer = game.players.find(player => player.id !== socket.id)!;
                     const [otherPlayerWinEloChange, otherPlayerLossEloChange] = calculateEloGainLoss(otherPlayer, game.players.find(player => player.id === socket.id)!, game.size);
-
-                    io.to(otherPlayer.id).emit("gameFinished", { won: true, newElo: otherPlayerWinEloChange.newElo, newEloCalculation: otherPlayerWinEloChange });
-                    game.state = "completed";
+                    io.to(otherPlayer.id).emit("gameFinished", { won: true, newElo: otherPlayerWinEloChange.newElo, newEloCalculation: otherPlayerWinEloChange, otherForfeit: true });
                     console.log(`Notified ${otherPlayer.id} of win due to opponent disconnect.`);
                     delete games[gameId];
                 }
