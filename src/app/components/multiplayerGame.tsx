@@ -305,7 +305,7 @@ export default function MultiplayerGame() {
 
     return (
         <div className="flex flex-col items-center justify-center flex-1">
-            {status !== "playing" && <h1 className="text-6xl font-bold">{statusMessages[status]}</h1>}
+            {status !== "playing" && !gameEnded && <h1 className="text-4xl p-5 text-center font-bold text-[var(--alt-text)]">{statusMessages[status]}</h1>}
             {status === "playing" && gameEnded === false && (
                 <div className="flex flex-col items-center justify-center w-full h-full p-4">
                     <h2 className={`text-4xl font-bold mt-10 mb-3 ${spaceMono.className}`}>
@@ -351,12 +351,18 @@ export default function MultiplayerGame() {
                             </div>
                             
                             <div className="relative">
-                                <button className="flex flex-row items-center justify-center text-xl mt-4 gap-3 group focus:outline-none cursor-pointer" onClick={() => setShowBreakdown(prev => !prev)}>
-                                        <FontAwesomeIcon icon={faChevronRight} className={`size-5! mb-0.5 text-[var(--unfocused-text)] group-hover:text-[var(--focused-text)] group-focus-visible:text-[var(--focused-text)] transition-all duration-300 ease-in-out ${showBreakdown ? "rotate-90 group-hover:rotate-0 group-focus-visible:rotate-0" : "rotate-0 group-hover:rotate-90 group-focus-visible:rotate-90"}`}/>
+                                <motion.button className="flex flex-row items-center justify-center text-xl mt-4 gap-3 group focus:outline-none cursor-pointer" onClick={() => setShowBreakdown(prev => !prev)}
+                                    initial={{scale: 1}}
+                                    whileHover={{scale: 1.05}}
+                                    whileFocus={{scale: 1.05}}
+                                    whileTap={{scale: 0.95}}
+                                    transition={{ type: "spring", stiffness: 150 }}
+                                    >
+                                        <FontAwesomeIcon icon={faChevronRight} className={`size-5! mb-0.5 text-[var(--unfocused-text)] group-hover:text-[var(--focused-text)] group-focus-visible:text-[var(--focused-text)] transition-all duration-300 ease-in-out ${showBreakdown ? "rotate-90" : "rotate-0"}`}/>
                                     <p className="font-normal text-center text-[var(--unfocused-text)] group-hover:text-[var(--focused-text)] group-focus-visible:text-[var(--focused-text)] transition-colors duration-300 ease-in-out">
                                         Elo Breakdown
                                     </p>
-                                </button>
+                                </motion.button>
                                 <AnimatePresence>
                                     {showBreakdown &&
                                         <motion.div className="text-lg font-normal text-[var(--alt-text)] mt-2 absolute flex-col items-end justify-center w-full"
