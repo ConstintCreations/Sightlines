@@ -37,14 +37,14 @@ export default function MultiplayerGame() {
             }
 
             socketRef.current.on("connect", () => {
-                console.log("Connected to server with ID:", socketRef.current?.id);
+                //console.log("Connected to server with ID:", socketRef.current?.id);
             });
 
             socketRef.current.emit("joinQueue", { size: inSizeRaw === "any" ? "any" : inSize, elo: elo, gamesPlayed: gamesPlayed });
 
             socketRef.current.on("queueJoined", () => {
                 if (status !== "connecting") return;
-                console.log("Joined queue, waiting for another player...");
+                //console.log("Joined queue, waiting for another player...");
                 setStatus(prev => prev === "connecting" ? "waiting" : prev);
             });
 
@@ -53,7 +53,7 @@ export default function MultiplayerGame() {
             });
 
             socketRef.current.on("playGame", (data) => {
-                console.log("Received playGame data:", data);
+                //console.log("Received playGame data:", data);
                 localStorage.setItem("elo", data.tempElo.toString());
                 localStorage.setItem("multiplayerGamesPlayed", data.newGamesPlayed.toString());
                 setSize(data.size);
@@ -62,13 +62,13 @@ export default function MultiplayerGame() {
             });
 
             socketRef.current.on("otherPlayerFinished", (data) => {
-                console.log("Other player finished with time:", data.finishedTime);
+                //console.log("Other player finished with time:", data.finishedTime);
                 setOtherPlayerFinishedTime(data.finishedTime);
             });
 
             socketRef.current.on("gameFinished", (data) => {
                 if (gameEnded) return;
-                console.log("Game finished:", data);
+                //console.log("Game finished:", data);
                 setGameEnded(true);
                 setWon(data.won);
                 setOtherForfeit(data.otherForfeit);
@@ -104,7 +104,7 @@ export default function MultiplayerGame() {
     useEffect(() => {
         if (askedIfReady && status === "waiting") {
             socketRef.current?.emit("readyConfirmation", { userId: socketRef.current.id });
-            console.log("Sent ready confirmation to server");
+            //console.log("Sent ready confirmation to server");
         }
     }, [askedIfReady, status]);
 
@@ -145,7 +145,7 @@ export default function MultiplayerGame() {
     function stopTimer(completed = true) {
         if (!timerStartedRef.current) return;
         timerStartedRef.current = false;
-        console.log("Stopping timer at elapsed time:", elapsed, " Completed:", completed);
+        //console.log("Stopping timer at elapsed time:", elapsed, " Completed:", completed);
         socketRef.current?.emit("timerStopped", { elapsed: elapsed, gridData: gridData, completed: completed });
     }
 
