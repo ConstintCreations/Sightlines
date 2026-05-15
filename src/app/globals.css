@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+:root {
+  --background: #1b1b1b;
+  --foreground: #ededed;
+
+  --unfocused-text: var(--color-gray-400);
+  --focused-text: var(--color-gray-200);
+  --alt-text: var(--color-gray-500);
+  --o-tile-unfocused: var(--color-cyan-700);
+  --o-tile-focused: var(--color-cyan-600);
+  --x-tile-unfocused: var(--color-orange-700);
+  --x-tile-focused: var(--color-orange-600);
+  --empty-cell: var(--color-zinc-800);
+  --o-cell: var(--color-cyan-700);
+  --x-cell: var(--color-orange-700);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+html {
+  transition: background-color 0.3s, color 0.3s;
+}
+
+html:not([data-theme]) * {
+  transition: none !important;
+}
+
+* {
+  user-select: none;
+}
+
+[data-theme="regular"] {
+  --background: #1b1b1b;
+  --foreground: #ededed;
+
+  --unfocused-text: var(--color-gray-400);
+  --focused-text: var(--color-gray-200);
+  --alt-text: var(--color-gray-500);
+  --o-tile-unfocused: var(--color-cyan-700);
+  --o-tile-focused: var(--color-cyan-600);
+  --x-tile-unfocused: var(--color-orange-700);
+  --x-tile-focused: var(--color-orange-600);
+  --empty-cell: var(--color-zinc-800);
+  --o-cell: var(--color-cyan-700);
+  --x-cell: var(--color-orange-700);
+}
+
+[data-theme="winter"] {
+  --background: #234460;
+  --foreground: var(--color-blue-100);
+
+  --unfocused-text: var(--color-slate-400);
+  --focused-text: var(--color-blue-200);
+  --alt-text: var(--color-gray-400);
+  --o-tile-unfocused: var(--color-sky-600);
+  --o-tile-focused: var(--color-sky-500);
+  --x-tile-unfocused: var(--color-sky-400);
+  --x-tile-focused: var(--color-sky-300);
+  --empty-cell: var(--color-zinc-800);
+  --o-cell: var(--color-sky-600);
+  --x-cell: var(--color-sky-300);
+}

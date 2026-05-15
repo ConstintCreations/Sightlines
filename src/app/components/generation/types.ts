@@ -1,0 +1,93 @@
+//#region Helpers
+
+export interface Position {
+    x: number;
+    y: number;
+}
+
+export enum Direction {
+    Up = "Up",
+    Down = "Down",
+    Left = "Left",
+    Right = "Right"
+}
+
+export const DirectionVector: Record<Direction, Position> = {
+    [Direction.Up]: { x: 0, y: 1 },
+    [Direction.Down]: { x: 0, y: -1 },
+    [Direction.Left]: { x: -1, y: 0 },
+    [Direction.Right]: { x: 1, y: 0 }
+}
+
+//#endregion
+
+//#region Cell
+
+export enum CellType {
+    None = "None",
+    Vision = "Vision",
+    Blocker = "Blocker",
+    Value = "Value"
+}
+
+export type CellState = { type: CellType.None } | { type: CellType.Vision } | { type: CellType.Blocker } | { type: CellType.Value, value: number }
+
+export class Cell {
+    constructor(
+        public x: number,
+        public y: number,
+        public type: CellType = CellType.None,
+        public value: number | null = null
+    ) {}
+}
+
+//#endregion
+
+//#region Grid
+
+export class Grid {
+    size: number;
+    cells: Cell[];
+
+    constructor(size: number) {
+        this.size = size;
+
+        this.cells = []
+
+        for (let y = 0; y < size; y++) {
+            for (let x = 0; x < size; x++) {
+                this.cells.push(new Cell(x, y));
+            }
+        }
+    }
+
+    getIndex(x: number, y:number): number {
+        return y * this.size + x;
+    }
+
+    getCell(x: number, y: number): Cell | null {
+        if (x < 0 || y < 0 || x >= this.size || y >= this.size) return null;
+        return this.cells[this.getIndex(x, y)];
+    }
+
+    setCell(x: number, y: number, type: CellType, value: number | null = null) {
+        const cell = this.getCell(x, y);
+        if (!cell) return;
+
+        cell.type = type;
+        cell.value = value;
+    }
+
+    getNeighbor(cell: Cell, direction: Direction): Cell | null {
+        const vector = DirectionVector[direction];
+        return this.getCell(cell.x + vector.x, cell.y + vector.y);
+    }
+
+    forEachCell(func: (cell: Cell) => void) {
+        for (const cell of this.cells) {
+            func(cell)
+        }
+    };
+}
+
+//#endregion

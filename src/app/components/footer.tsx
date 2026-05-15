@@ -1,0 +1,30 @@
+"use client";
+import CustomLink from "@/app/components/customLink";
+import { motion } from "framer-motion";
+
+export default function Footer() {
+    return (
+        <footer className="w-full py-4 border-t border-[var(--alt-text)] mt-8 flex flex justify-center items-center text-sm text-[var(--alt-text)] mt-15">
+            Created by 
+            <CustomLink href="https://github.com/ConstintCreations" text="ConstintCreations" />
+            | Inspired by 
+            <CustomLink href="https://0hn0.com/" text="0h n0" />
+            by 
+            <CustomLink href="https://www.q42.nl/en" text="Q42" color="lime" />
+
+            <motion.button
+                className="fixed right-10 cursor-pointer text-[var(--alt-text)] hover:text-[var(--focused-text)] focus:outline-none focus-visible:text-[var(--focused-text)] transition-colors duration-300"
+                whileHover={{scale: 1.1, y:-3}}
+                whileFocus={{scale: 1.1, y:-3}}
+                whileTap={{scale: 0.95, y:0}}
+                transition={{ type: "spring", stiffness: 300 }}
+                onClick={() => {
+                    localStorage.clear();
+                    location.reload();
+                }}
+            >
+                Clear Data
+            </motion.button>
+        </footer>
+    );
+}
