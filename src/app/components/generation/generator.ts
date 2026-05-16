@@ -2,25 +2,25 @@ import { Grid, CellType } from "./types";
 import { SolveGrid } from "./solver";
 
 export function generatePuzzleWithSolution(size: number) {
-    console.log("======Generating Grid======\n");
-    console.log("Generating new puzzle of size " + size);
+    //console.log("======Generating Grid======\n");
+    //console.log("Generating new puzzle of size " + size);
     const grid = new Grid(size);
     grid.InitializeNoneAndValueCellsAsVision();
-    console.log("");
+    ////console.log("");
     SolveGrid(grid);
-    console.log("");
+    //console.log("");
     grid.KeepValuesUnderGridSize();
     const solutionGrid = grid.CloneGrid();
-    console.log("\nCloned Grid in Solved State")
+    //console.log("\nCloned Grid in Solved State")
     grid.BreakDownGridToSolveable();
 
-    console.log("\n===========================\n");
-    console.log("Final Grids:")
+    //console.log("\n===========================\n");
+    //console.log("Final Grids:")
 
-    printGridToConsole(grid, "Unsolved Grid");
-    printGridToConsole(solutionGrid, "Solved Grid");
+    //printGridToConsole(grid, "Unsolved Grid");
+    //printGridToConsole(solutionGrid, "Solved Grid");
 
-    console.log("");
+    //console.log("");
     
     return { grid: grid, solutionGrid: solutionGrid };
 }

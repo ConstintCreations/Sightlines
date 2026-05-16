@@ -1,13 +1,11 @@
 import { AnalyzeCellPassOne, AnalyzeCellPassTwo } from "./analysis";
-import { printGridToConsole } from "./generator";
 import { AllDirections, CellType, Grid } from "./types";
 
 export function SolveGrid(grid: Grid): boolean {
     let tryAgain = true;
     let attempts = 0;
 
-    console.log("Solving Grid:");
-    printGridToConsole(grid);
+    //console.log("Solving Grid");
 
     while (tryAgain && attempts++ < 100) {
         tryAgain = false;
@@ -21,8 +19,7 @@ export function SolveGrid(grid: Grid): boolean {
         }
 
         if (isDoneSolving) {
-            console.log("Grid Solved in " + (attempts+1) + " attempts:");
-            printGridToConsole(grid);
+            //console.log("Grid Solved in " + (attempts+1) + " attempts:");
             return true;
         }
 
@@ -91,7 +88,7 @@ export function SolveGrid(grid: Grid): boolean {
         }
     }
 
-    console.log("Failed to solve grid");
+    //console.log("Failed to solve grid");
 
     return false;
 }

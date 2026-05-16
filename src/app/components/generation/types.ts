@@ -231,11 +231,11 @@ export class Grid {
         this.forEachCell((cell) => {
             if (cell.type == CellType.None || (cell.type == CellType.Value && shouldOverwriteValues)) this.setCell(cell.x, cell.y, CellType.Vision);
         });
-        console.log("Filled None " + (shouldOverwriteValues ? "and Value " : "") + "cells with Vision cells");
+        //console.log("Filled None " + (shouldOverwriteValues ? "and Value " : "") + "cells with Vision cells");
     }
 
     KeepValuesUnderGridSize() {
-        console.log("Keeping values under " + this.size);
+        //console.log("Keeping values under " + this.size);
 
         let tryAgain = true;
         let attempts = 0;
@@ -274,13 +274,13 @@ export class Grid {
                             cut.type = CellType.Blocker;
                             cut.value = null;
 
-                            console.log(`\nCut found at (${cut.x},${cut.y}). Solving Again:`);
+                            //console.log(`\nCut found at (${cut.x},${cut.y}). Solving Again:`);
 
                             this.InitializeNoneAndValueCellsAsVision(true);
                             SolveGrid(this);
                             tryAgain = true;
                         } else {
-                            console.log(`No cuts found for cell at (${cell.x}, ${cell.y}) with value ${cell.value}`);
+                            //console.log(`No cuts found for cell at (${cell.x}, ${cell.y}) with value ${cell.value}`);
                         }
                         break;
                     }
@@ -291,7 +291,7 @@ export class Grid {
     }
 
     BreakDownGridToSolveable() {
-        console.log("\nBreaking down grid to solveable state:");
+        //console.log("\nBreaking down grid to solveable state:");
 
         this.solved = this.CloneGrid();
         
@@ -317,7 +317,7 @@ export class Grid {
 
             if (cell.type === CellType.Blocker && this.countBlockerCells() <= minimumBlockerCells) continue;
 
-            console.log(`\nSelected Cell at (${cell.x}, ${cell.y}) of type ${cell.type}${cell.type === CellType.Value && cell.value ? (" and value " + cell.value) : ""}. ${availableCells.length} available cells remain.`);
+            //console.log(`\nSelected Cell at (${cell.x}, ${cell.y}) of type ${cell.type}${cell.type === CellType.Value && cell.value ? (" and value " + cell.value) : ""}. ${availableCells.length} available cells remain.`);
 
             cell.type = CellType.None;
             cell.value = null;
