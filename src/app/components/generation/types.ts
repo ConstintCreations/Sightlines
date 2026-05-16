@@ -122,6 +122,7 @@ export class Cell {
 export class Grid {
     size: number;
     cells: Cell[];
+    savedGrids: Record<number, {cells: Cell[]}> = {};
 
     constructor(size: number) {
         this.size = size;
@@ -198,6 +199,31 @@ export class Grid {
         }
     };
 
+    CloneGrid() {
+        const clonedGrid = new Grid(this.size);
+        clonedGrid.cells = this.cells.map(cell => new Cell(cell.x, cell.y, cell.type, cell.value));
+        return clonedGrid;
+    }
+
+    saveGrid(saveSlot:number) {
+        this.savedGrids[saveSlot] = { cells: [] };
+
+        this.forEachCell((cell) => {
+            this.savedGrids[saveSlot].cells.push({...cell});
+        })
+    }
+
+    restoreSavedGrid(saveSlot:number) {
+        const savedGrid = this.savedGrids[saveSlot];
+        if (!savedGrid) return;
+
+        this.cells = [];
+
+        for (const cell of savedGrid.cells) {
+            this.cells.push({...cell});
+        };
+    }
+
     InitializeNoneAndValueCellsAsVision(shouldOverwriteValues:boolean = false) {
         this.forEachCell((cell) => {
             if (cell.type == CellType.None || (cell.type == CellType.Value && shouldOverwriteValues)) this.setCell(cell.x, cell.y, CellType.Vision);
@@ -263,12 +289,6 @@ export class Grid {
 
     BreakDownGridToSolveable() {
         console.log("Breaking down grid to solveable state");
-    }
-
-    CloneGrid() {
-        const clonedGrid = new Grid(this.size);
-        clonedGrid.cells = this.cells.map(cell => new Cell(cell.x, cell.y, cell.type, cell.value));
-        return clonedGrid;
     }
 }
 
