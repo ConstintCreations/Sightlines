@@ -13,8 +13,8 @@ export enum Direction {
 }
 
 export const DirectionVector: Record<Direction, Position> = {
-    [Direction.Up]: { x: 0, y: 1 },
-    [Direction.Down]: { x: 0, y: -1 },
+    [Direction.Up]: { x: 0, y: -1 },
+    [Direction.Down]: { x: 0, y: 1 },
     [Direction.Left]: { x: -1, y: 0 },
     [Direction.Right]: { x: 1, y: 0 }
 }
@@ -29,8 +29,6 @@ export enum CellType {
     Blocker = "Blocker",
     Value = "Value"
 }
-
-export type CellState = { type: CellType.None } | { type: CellType.Vision } | { type: CellType.Blocker } | { type: CellType.Value, value: number }
 
 export class Cell {
     constructor(
@@ -88,6 +86,12 @@ export class Grid {
             func(cell)
         }
     };
+
+    InitializeNoneAndValueCellsAsVision(shouldOverwriteValues:boolean = false) {
+        this.forEachCell((cell) => {
+            if (cell.type == CellType.None || (cell.type == CellType.Value && shouldOverwriteValues)) this.setCell(cell.x, cell.y, CellType.Vision);
+        })
+    }
 }
 
 //#endregion
