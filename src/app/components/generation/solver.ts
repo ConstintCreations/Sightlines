@@ -34,8 +34,14 @@ export function SolveGrid(grid: Grid): boolean {
 
             //Convert a dot to a number if it is fully surrounded by None cells
             if (cell.type === CellType.Vision && !cell.info.noneCellsAround) {
-                cell.type = CellType.Value;
-                cell.value = cell.info.confirmedVisibleCells;
+                if (cell.info.confirmedVisibleCells) {
+                    cell.type = CellType.Value;
+                    cell.value = cell.info.confirmedVisibleCells;
+                } else {
+                    cell.type = CellType.Blocker;
+                    cell.value = null;
+                }
+                
                 tryAgain = true;
                 break;
             }
