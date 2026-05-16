@@ -2,6 +2,7 @@ import { Grid, CellType } from "./types";
 import { SolveGrid } from "./solver";
 
 export function generatePuzzleWithSolution(size: number) {
+    console.log("======Generating Grid======\n");
     console.log("Generating new puzzle of size " + size);
     const grid = new Grid(size);
     grid.InitializeNoneAndValueCellsAsVision();
@@ -13,7 +14,7 @@ export function generatePuzzleWithSolution(size: number) {
 
     printGridToConsole(grid, "Unsolved Grid");
     printGridToConsole(solutionGrid, "Solved Grid");
-
+    console.log("\n===========================\n");
     return { grid: grid, solutionGrid: solutionGrid };
 }
 

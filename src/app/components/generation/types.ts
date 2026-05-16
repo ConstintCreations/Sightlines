@@ -12,6 +12,13 @@ export enum Direction {
     Right = "Right"
 }
 
+export const AllDirections: Direction[] = [
+    Direction.Up,
+    Direction.Down,
+    Direction.Left,
+    Direction.Right,
+]
+
 export const DirectionVector: Record<Direction, Position> = {
     [Direction.Up]: { x: 0, y: -1 },
     [Direction.Down]: { x: 0, y: 1 },
@@ -109,4 +116,58 @@ export class Grid {
     }
 }
 
+//#endregion
+
+//#region CellAnalysis
+    export interface DirectionalCellInfo {
+        noneCellCount: number;
+        numberCountAfterNoneCellFound: number;
+        wouldConvertingNoneCellOverflow: boolean;
+        maximumPossibleValue: number;
+        maximumPossibleCountInOtherDirections: number;
+        valueWhenConvertingFirstNoneCellToVision: number;
+    }
+
+    export interface CellInfo {
+        noneCellsAround: number;
+        confirmedVisibleCells: number;
+        isValueReached: boolean;
+        canBeReachedWithNoneCells: boolean;
+        valueReachedCellsAround: boolean; // Second Pass
+        onlyOnePossibleDirection: Direction | null;
+        directions: {
+            [Direction.Up]: DirectionalCellInfo,
+            [Direction.Down]: DirectionalCellInfo,
+            [Direction.Left]: DirectionalCellInfo,
+            [Direction.Right]: DirectionalCellInfo,
+        }
+    }
+
+    export function CreateDirectionalCellInfo(): DirectionalCellInfo {
+        return {
+            noneCellCount: 0,
+            numberCountAfterNoneCellFound: 0,
+            wouldConvertingNoneCellOverflow: false,
+            maximumPossibleValue: 0,
+            maximumPossibleCountInOtherDirections: 0,
+            valueWhenConvertingFirstNoneCellToVision: 0
+        }
+    }
+
+    export function CreateCellInfo(): CellInfo {
+        return {
+            noneCellsAround: 0,
+            confirmedVisibleCells: 0,
+            isValueReached: false,
+            canBeReachedWithNoneCells: false,
+            valueReachedCellsAround: false, // Second Pass
+            onlyOnePossibleDirection: null,
+            directions: {
+                [Direction.Up]: CreateDirectionalCellInfo(),
+                [Direction.Down]: CreateDirectionalCellInfo(),
+                [Direction.Left]: CreateDirectionalCellInfo(),
+                [Direction.Right]: CreateDirectionalCellInfo(),
+            }
+        }
+    } 
 //#endregion
