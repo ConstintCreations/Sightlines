@@ -144,6 +144,26 @@ export class Grid {
         return this.getCell(cell.x + vector.x, cell.y + vector.y);
     }
 
+    capCellInDirection(cell: Cell, direction: Direction, capWith: CellType.Vision | CellType.Blocker = CellType.Blocker) {
+        let currentCell = this.getNeighbor(cell, direction);
+        while (currentCell) {
+            if (currentCell.type === CellType.Blocker) break;
+
+            if (currentCell.type === CellType.None) {
+                currentCell.type = capWith;
+                break;
+            }
+
+            currentCell = this.getNeighbor(currentCell, direction);
+        }
+    }
+
+    capCellInAllDirections(cell: Cell, capWith: CellType.Vision | CellType.Blocker = CellType.Blocker) {
+        for (const direction of AllDirections) {
+            this.capCellInDirection(cell, direction, capWith);
+        }
+    }
+
     forEachCell(func: (cell: Cell) => void) {
         for (const cell of this.cells) {
             func(cell)

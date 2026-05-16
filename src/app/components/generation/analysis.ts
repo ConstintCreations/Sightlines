@@ -1,4 +1,6 @@
-import { CellInfo, DirectionalCellInfo, Grid, Cell, CreateCellInfo, Direction, AllDirections, DirectionVector, CellType } from "./types";
+import { Grid, Cell, CreateCellInfo, Direction, AllDirections, CellType } from "./types";
+
+// Split into 2 passes because second pass relies on all cells having information from the first pass
 
 export function AnalyzeCellPassOne(grid: Grid, cell: Cell) {
     if (!cell || !grid) return;
