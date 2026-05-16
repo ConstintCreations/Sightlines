@@ -34,7 +34,7 @@ export function SolveGrid(grid: Grid): boolean {
             AnalyzeCellPassTwo(grid, cell);
             if (!cell.info) return false;
 
-            //Convert a dot to a number if it is fully surrounded by None cells
+            //Convert a Vision cell to a Value cell if it is fully surrounded by None cells
             if (cell.type === CellType.Vision && !cell.info.noneCellsAround) {
                 if (cell.info.confirmedVisibleCells) {
                     cell.type = CellType.Value;
@@ -70,7 +70,7 @@ export function SolveGrid(grid: Grid): boolean {
                         grid.capCellInDirection(cell, direction);
                         tryAgain = true;
                         break;
-                    } else if (directionalInfo.noneCellCount && directionalInfo.numberCountAfterNoneCellFound + directionalInfo.maximumPossibleCountInOtherDirections <= cell.value) {
+                    } else if (directionalInfo.noneCellCount && directionalInfo.valueWhenConvertingFirstNoneCellToVision + directionalInfo.maximumPossibleCountInOtherDirections <= cell.value) {
                         //Must replace None cell with Vision cell in this direction
                         grid.capCellInDirection(cell, direction, CellType.Vision);
                         tryAgain = true;

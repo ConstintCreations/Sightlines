@@ -294,14 +294,11 @@ export class Grid {
         console.log("\nBreaking down grid to solveable state:");
 
         this.solved = this.CloneGrid();
-
-        this.saveGrid(10);
         
         let tryAgain = true;
         let attempts = 0;
         const minimumBlockerCells = 1;
-        let availableCells: Cell[] = [];
-        let cell;
+        const availableCells: Cell[] = [];
 
         this.forEachCell((cell) => {
             availableCells.push(cell);
@@ -313,9 +310,10 @@ export class Grid {
             tryAgain = false;
             this.saveGrid(1); // Before
 
-            let temporaryCell = availableCells.pop();
+            const temporaryCell = availableCells.pop();
             if (!temporaryCell) continue;
-            cell = this.cells[this.getIndex(temporaryCell.x, temporaryCell.y)];
+            
+            const cell = this.cells[this.getIndex(temporaryCell.x, temporaryCell.y)];
 
             if (cell.type === CellType.Blocker && this.countBlockerCells() <= minimumBlockerCells) continue;
 
@@ -324,9 +322,10 @@ export class Grid {
             cell.type = CellType.None;
             cell.value = null;
 
-            const testGrid = this.CloneGrid();
+            this.saveGrid(2);
 
-            if (SolveGrid(testGrid)) {
+            if (SolveGrid(this)) {
+                this.restoreSavedGrid(2);
                 tryAgain = true;
             } else {
                 this.restoreSavedGrid(1);
