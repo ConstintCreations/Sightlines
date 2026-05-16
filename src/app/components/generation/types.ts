@@ -92,6 +92,20 @@ export class Grid {
             if (cell.type == CellType.None || (cell.type == CellType.Value && shouldOverwriteValues)) this.setCell(cell.x, cell.y, CellType.Vision);
         })
     }
+
+    KeepValuesUnderGridSize() {
+        
+    }
+
+    BreakDownGridToSolveable() {
+
+    }
+
+    CloneGrid() {
+        const clonedGrid = new Grid(this.size);
+        clonedGrid.cells = this.cells.map(cell => new Cell(cell.x, cell.y, cell.type, cell.value));
+        return clonedGrid;
+    }
 }
 
 //#endregion
