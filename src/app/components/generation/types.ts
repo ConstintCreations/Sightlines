@@ -122,7 +122,8 @@ export class Cell {
 export class Grid {
     size: number;
     cells: Cell[];
-    savedGrids: Record<number, {cells: Cell[]}> = {};
+    savedGrids: Record<number, {grid: Grid}> = {};
+    solved: Grid | null = null;
 
     constructor(size: number) {
         this.size = size;
@@ -199,6 +200,14 @@ export class Grid {
         }
     };
 
+    countBlockerCells():number {
+        let blockerCount = 0;
+        this.forEachCell((cell) => {
+            if (cell.type === CellType.Blocker) blockerCount++;
+        })
+        return blockerCount;
+    }
+
     CloneGrid() {
         const clonedGrid = new Grid(this.size);
         clonedGrid.cells = this.cells.map(cell => new Cell(cell.x, cell.y, cell.type, cell.value));
@@ -206,22 +215,16 @@ export class Grid {
     }
 
     saveGrid(saveSlot:number) {
-        this.savedGrids[saveSlot] = { cells: [] };
-
-        this.forEachCell((cell) => {
-            this.savedGrids[saveSlot].cells.push({...cell});
-        })
+        this.savedGrids[saveSlot] = { grid: this.CloneGrid() };
     }
 
     restoreSavedGrid(saveSlot:number) {
         const savedGrid = this.savedGrids[saveSlot];
         if (!savedGrid) return;
 
-        this.cells = [];
+        const restoredGrid = savedGrid.grid.CloneGrid()
 
-        for (const cell of savedGrid.cells) {
-            this.cells.push({...cell});
-        };
+        this.cells = restoredGrid.cells;
     }
 
     InitializeNoneAndValueCellsAsVision(shouldOverwriteValues:boolean = false) {
@@ -288,54 +291,48 @@ export class Grid {
     }
 
     BreakDownGridToSolveable() {
-        /*console.log("\nBreaking down grid to solveable state:");
+        console.log("\nBreaking down grid to solveable state:");
+
+        this.solved = this.CloneGrid();
+
+        this.saveGrid(10);
         
         let tryAgain = true;
         let attempts = 0;
         const minimumBlockerCells = 1;
-        let currentBlockerCells = 0;
         let availableCells: Cell[] = [];
         let cell;
 
         this.forEachCell((cell) => {
             availableCells.push(cell);
-
-            if (cell.type === CellType.Blocker) {
-                currentBlockerCells++;
-            }
         });
 
         shuffleArray(availableCells);
 
         while (tryAgain && availableCells.length && attempts++ < 100) {
             tryAgain = false;
-            this.saveGrid(1);
+            this.saveGrid(1); // Before
 
             let temporaryCell = availableCells.pop();
             if (!temporaryCell) continue;
             cell = this.cells[this.getIndex(temporaryCell.x, temporaryCell.y)];
 
-            if (cell.type === CellType.Blocker && currentBlockerCells <= minimumBlockerCells) continue;
+            if (cell.type === CellType.Blocker && this.countBlockerCells() <= minimumBlockerCells) continue;
+
+            console.log(`\nSelected Cell at (${cell.x}, ${cell.y}) of type ${cell.type}${cell.type === CellType.Value && cell.value ? (" and value " + cell.value) : ""}. ${availableCells.length} available cells remain.`);
 
             cell.type = CellType.None;
             cell.value = null;
-            this.saveGrid(2);
 
             const testGrid = this.CloneGrid();
-            let testCell = testGrid.getCell(cell.x, cell.y);
-            console.log(`\nSelected Cell at (${testCell?.x}, ${testCell?.y}). ${availableCells.length} available cells remain.`);
 
             if (SolveGrid(testGrid)) {
-                if (testCell && testCell.type === CellType.Blocker) {
-                    currentBlockerCells--;
-                }
-                this.restoreSavedGrid(2);
                 tryAgain = true;
             } else {
                 this.restoreSavedGrid(1);
                 tryAgain = true;
             }
-        }*/
+        }
     }
 }
 

@@ -11,8 +11,7 @@ export function generatePuzzleWithSolution(size: number) {
     console.log("");
     grid.KeepValuesUnderGridSize();
     const solutionGrid = grid.CloneGrid();
-    printGridToConsole(solutionGrid);
-    console.log("Cloned Grid in Solved State")
+    console.log("\nCloned Grid in Solved State")
     grid.BreakDownGridToSolveable();
 
     console.log("\n===========================\n");
@@ -26,7 +25,7 @@ export function generatePuzzleWithSolution(size: number) {
     return { grid: grid, solutionGrid: solutionGrid };
 }
 
-function printGridToConsole(grid: Grid, label: string | null = null) {
+export function printGridToConsole(grid: Grid, label: string | null = null) {
 
     if (label) {
         console.log("\n" + label + "\n");

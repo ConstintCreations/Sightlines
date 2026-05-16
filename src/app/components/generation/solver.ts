@@ -1,11 +1,13 @@
 import { AnalyzeCellPassOne, AnalyzeCellPassTwo } from "./analysis";
+import { printGridToConsole } from "./generator";
 import { AllDirections, CellType, Grid } from "./types";
 
 export function SolveGrid(grid: Grid): boolean {
     let tryAgain = true;
     let attempts = 0;
 
-    console.log("Solving Grid");
+    console.log("Solving Grid:");
+    printGridToConsole(grid);
 
     while (tryAgain && attempts++ < 100) {
         tryAgain = false;
@@ -19,8 +21,8 @@ export function SolveGrid(grid: Grid): boolean {
         }
 
         if (isDoneSolving) {
-            console.log("Grid Solved in " + (attempts+1) + " attempts");
-            console.log(grid.cells.length);
+            console.log("Grid Solved in " + (attempts+1) + " attempts:");
+            printGridToConsole(grid);
             return true;
         }
 
@@ -79,8 +81,8 @@ export function SolveGrid(grid: Grid): boolean {
                 if (tryAgain) break;
             }
 
-            //Isolated Non-Blocker cell; Replace with Blocker cell
-            if (cell.type !== CellType.Blocker && !cell.info.noneCellsAround && !cell.info.confirmedVisibleCells) {
+            //Isolated None cell; Replace with Blocker cell
+            if (cell.type == CellType.None && !cell.info.noneCellsAround && !cell.info.confirmedVisibleCells) {
                 cell.type = CellType.Blocker;
                 cell.value = null;
                 tryAgain = true;
@@ -88,6 +90,8 @@ export function SolveGrid(grid: Grid): boolean {
             }
         }
     }
+
+    console.log("Failed to solve grid");
 
     return false;
 }
