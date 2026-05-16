@@ -1,15 +1,15 @@
 import { CellInfo, DirectionalCellInfo, Grid, Cell, CreateCellInfo, Direction, AllDirections, DirectionVector, CellType } from "./types";
 
-export function AnalyzeCellPassOne(grid: Grid, cell: Cell): CellInfo | null {
-    if (!cell || !grid) return null;
-    let cellInfo = CreateCellInfo();
+export function AnalyzeCellPassOne(grid: Grid, cell: Cell) {
+    if (!cell || !grid) return;
+    cell.info = CreateCellInfo();
 
     const possibleDirections = new Set<Direction>();
     let possibleDirectionCount = 0;
 
     for (const direction of AllDirections) {
 
-        const directionalInfo = cellInfo.directions[direction];
+        const directionalInfo = cell.info.directions[direction];
 
         let currentCell = grid.getNeighbor(cell, direction)
 
@@ -23,7 +23,7 @@ export function AnalyzeCellPassOne(grid: Grid, cell: Cell): CellInfo | null {
 
                 directionalInfo.noneCellCount++;
                 directionalInfo.maximumPossibleValue++;
-                cellInfo.noneCellsAround++;
+                cell.info.noneCellsAround++;
 
                 // If this is a Value cell, add this direction to possible directions
                 if (cell.type === CellType.Value) {
@@ -36,7 +36,7 @@ export function AnalyzeCellPassOne(grid: Grid, cell: Cell): CellInfo | null {
                 directionalInfo.maximumPossibleValue++;
 
                 if (!directionalInfo.noneCellCount) {
-                    cellInfo.confirmedVisibleCells++;
+                    cell.info.confirmedVisibleCells++;
                     directionalInfo.valueWhenConvertingFirstNoneCellToVision++;
                 } else if (cell.type === CellType.Value && directionalInfo.noneCellCount === 1) {
                     // Only 1 None cell between current Vision/Value and Value cells
@@ -53,23 +53,51 @@ export function AnalyzeCellPassOne(grid: Grid, cell: Cell): CellInfo | null {
     }
 
     if (possibleDirectionCount === 1) {
-        cellInfo.onlyOnePossibleDirection = [...possibleDirections][0];
+        cell.info.onlyOnePossibleDirection = [...possibleDirections][0];
     }
 
     if (cell.type === CellType.Value) {
-        if (cell.value === cellInfo.confirmedVisibleCells) {
-            cellInfo.isValueReached = true;
-        } else if (cell.value === cellInfo.confirmedVisibleCells + cellInfo.noneCellsAround) {
-            cellInfo.canBeReachedWithNoneCells = true;
+        if (cell.value === cell.info.confirmedVisibleCells) {
+            cell.info.isValueReached = true;
+        } else if (cell.value === cell.info.confirmedVisibleCells + cell.info.noneCellsAround) {
+            cell.info.canBeReachedWithNoneCells = true;
         }
     }
-
-    return cellInfo;
 }
 
 
-export function AnalyzeCellPassTwo(grid: Grid, cell: Cell, cellInfoMap: Map<Cell, CellInfo>): CellInfo | null {
-    if (!cell || !grid) return null;
+export function AnalyzeCellPassTwo(grid: Grid, cell: Cell) {
+    if (!cell || !grid || !cell.info) return;
+    
+    for (const direction of AllDirections) {
 
-    return cellInfoMap.get(cell) || null;
+        const directionalInfo = cell.info.directions[direction];
+
+        let currentCell = grid.getNeighbor(cell, direction)
+
+        while (currentCell && currentCell.type !== CellType.Blocker) {
+
+            if (currentCell.type === CellType.Value && currentCell.info?.isValueReached) cell.info.valueReachedCellsAround = true;
+
+            currentCell = grid.getNeighbor(currentCell, direction);
+        }
+
+        if (cell.type === CellType.Value && !cell.info.isValueReached && directionalInfo.noneCellCount) {
+            directionalInfo.maximumPossibleCountInOtherDirections = 0;
+            for (const otherDirection of AllDirections) {
+                if (otherDirection !== direction) {
+                    directionalInfo.maximumPossibleCountInOtherDirections += cell.info.directions[otherDirection].maximumPossibleValue;
+                }
+            }
+        }
+    }
+
+    if (cell.type === CellType.Value) {
+        if (cell.value === cell.info.confirmedVisibleCells) {
+            cell.info.isValueReached = true;
+        } else if (cell.value === cell.info.confirmedVisibleCells + cell.info.noneCellsAround) {
+            cell.info.canBeReachedWithNoneCells = true;
+        }
+    }
+
 }
