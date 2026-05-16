@@ -1,3 +1,3 @@
 import { generatePuzzleWithSolution } from "./generator";
 
-generatePuzzleWithSolution(4);
+generatePuzzleWithSolution(9);

@@ -1,5 +1,7 @@
 //#region Helpers
 
+import { SolveGrid } from "./solver";
+
 export interface Position {
     x: number;
     y: number;
@@ -24,6 +26,17 @@ export const DirectionVector: Record<Direction, Position> = {
     [Direction.Down]: { x: 0, y: 1 },
     [Direction.Left]: { x: -1, y: 0 },
     [Direction.Right]: { x: 1, y: 0 }
+}
+
+export function shuffleArray(array: any[]): any[] {
+    for (let index = 0; index < array.length - 1; index++) {
+        let shuffledIndex = index + Math.floor(Math.random() * (array.length - index));
+        let temporaryValue = array[shuffledIndex];
+        array[shuffledIndex] = array[index];
+        array[index] = temporaryValue;
+    }
+
+    return array;
 }
 
 //#endregion
@@ -164,6 +177,21 @@ export class Grid {
         }
     }
 
+    getNonBlockerCellsInRange(cell: Cell, maximum: number, minimum: number = 1):Cell[] {
+        let resultingCells:Cell[] = [];
+        
+        for (const direction of AllDirections) {
+            let distanceFromCell = 0;
+            let currentCell = this.getNeighbor(cell, direction);
+            while (currentCell && currentCell.type !== CellType.Blocker) {
+                distanceFromCell++;
+                if (distanceFromCell >= minimum && distanceFromCell <= maximum) resultingCells.push(currentCell);
+                currentCell = this.getNeighbor(currentCell, direction);
+            }
+        }
+        return resultingCells;
+    }
+
     forEachCell(func: (cell: Cell) => void) {
         for (const cell of this.cells) {
             func(cell)
@@ -179,6 +207,58 @@ export class Grid {
 
     KeepValuesUnderGridSize() {
         console.log("Keeping values under " + this.size);
+
+        let tryAgain = true;
+        let attempts = 0;
+        let cell:Cell;
+
+        while (tryAgain && attempts++ < 100) {
+            tryAgain = false;
+            
+            let overvaluedCells:Cell[] = [];
+            this.forEachCell((cell) => {
+                if (cell.type === CellType.Value && cell.value && cell.value > this.size) {
+                    overvaluedCells.push(cell);
+                }
+            });
+
+            shuffleArray(overvaluedCells);
+
+            for (cell of overvaluedCells) {
+                if (!cell || cell.type !== CellType.Value || !cell.value) continue;
+
+                
+
+                if (cell.value > this.size) {
+                    
+                    let availableCuts:Cell[] = this.getNonBlockerCellsInRange(cell, this.size);
+                    let cut;
+                    let firstCut;
+
+                    shuffleArray(availableCuts);
+
+                    while (!cut && availableCuts.length) {
+                        cut = availableCuts.pop();
+                        if (!firstCut) firstCut = cut;
+                        if (!cut) cut = firstCut;
+                        if (cut) {
+                            cut.type = CellType.Blocker;
+                            cut.value = null;
+
+                            console.log(`\nCut found at (${cut.x},${cut.y}). Solving Again:`);
+
+                            this.InitializeNoneAndValueCellsAsVision(true);
+                            SolveGrid(this);
+                            tryAgain = true;
+                        } else {
+                            console.log(`No cuts found for cell at (${cell.x}, ${cell.y}) with value ${cell.value}`);
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
     }
 
     BreakDownGridToSolveable() {

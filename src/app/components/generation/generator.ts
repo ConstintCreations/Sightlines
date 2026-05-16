@@ -6,15 +6,22 @@ export function generatePuzzleWithSolution(size: number) {
     console.log("Generating new puzzle of size " + size);
     const grid = new Grid(size);
     grid.InitializeNoneAndValueCellsAsVision();
+    console.log("");
     SolveGrid(grid);
+    console.log("");
     grid.KeepValuesUnderGridSize();
     const solutionGrid = grid.CloneGrid();
     console.log("Cloned Grid in Solved State")
     grid.BreakDownGridToSolveable();
 
+    console.log("\n===========================\n");
+    console.log("Final Grids:")
+
     printGridToConsole(grid, "Unsolved Grid");
     printGridToConsole(solutionGrid, "Solved Grid");
-    console.log("\n===========================\n");
+
+    console.log("");
+    
     return { grid: grid, solutionGrid: solutionGrid };
 }
 

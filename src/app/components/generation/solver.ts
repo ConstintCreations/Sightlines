@@ -5,6 +5,8 @@ export function SolveGrid(grid: Grid) {
     let tryAgain = true;
     let attempts = 0;
 
+    console.log("Solving Grid");
+
     while (tryAgain && attempts++ < 100) {
         tryAgain = false;
 
@@ -65,4 +67,6 @@ export function SolveGrid(grid: Grid) {
             }
         }
     }
+
+    console.log("Grid Solved in " + attempts + " attempts");
 }
