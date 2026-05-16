@@ -288,7 +288,54 @@ export class Grid {
     }
 
     BreakDownGridToSolveable() {
-        console.log("Breaking down grid to solveable state");
+        /*console.log("\nBreaking down grid to solveable state:");
+        
+        let tryAgain = true;
+        let attempts = 0;
+        const minimumBlockerCells = 1;
+        let currentBlockerCells = 0;
+        let availableCells: Cell[] = [];
+        let cell;
+
+        this.forEachCell((cell) => {
+            availableCells.push(cell);
+
+            if (cell.type === CellType.Blocker) {
+                currentBlockerCells++;
+            }
+        });
+
+        shuffleArray(availableCells);
+
+        while (tryAgain && availableCells.length && attempts++ < 100) {
+            tryAgain = false;
+            this.saveGrid(1);
+
+            let temporaryCell = availableCells.pop();
+            if (!temporaryCell) continue;
+            cell = this.cells[this.getIndex(temporaryCell.x, temporaryCell.y)];
+
+            if (cell.type === CellType.Blocker && currentBlockerCells <= minimumBlockerCells) continue;
+
+            cell.type = CellType.None;
+            cell.value = null;
+            this.saveGrid(2);
+
+            const testGrid = this.CloneGrid();
+            let testCell = testGrid.getCell(cell.x, cell.y);
+            console.log(`\nSelected Cell at (${testCell?.x}, ${testCell?.y}). ${availableCells.length} available cells remain.`);
+
+            if (SolveGrid(testGrid)) {
+                if (testCell && testCell.type === CellType.Blocker) {
+                    currentBlockerCells--;
+                }
+                this.restoreSavedGrid(2);
+                tryAgain = true;
+            } else {
+                this.restoreSavedGrid(1);
+                tryAgain = true;
+            }
+        }*/
     }
 }
 

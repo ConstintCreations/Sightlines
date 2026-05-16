@@ -1,7 +1,7 @@
 import { AnalyzeCellPassOne, AnalyzeCellPassTwo } from "./analysis";
 import { AllDirections, CellType, Grid } from "./types";
 
-export function SolveGrid(grid: Grid) {
+export function SolveGrid(grid: Grid): boolean {
     let tryAgain = true;
     let attempts = 0;
 
@@ -10,13 +10,27 @@ export function SolveGrid(grid: Grid) {
     while (tryAgain && attempts++ < 100) {
         tryAgain = false;
 
+        let isDoneSolving = true;
+        for (const cell of grid.cells) {
+            if (cell.type === CellType.None || cell.type === CellType.Vision) {
+                isDoneSolving = false;
+                break;
+            }
+        }
+
+        if (isDoneSolving) {
+            console.log("Grid Solved in " + (attempts+1) + " attempts");
+            console.log(grid.cells.length);
+            return true;
+        }
+
         for (const cell of grid.cells) {
             AnalyzeCellPassOne(grid, cell);
         }
 
         for (const cell of grid.cells) {
             AnalyzeCellPassTwo(grid, cell);
-            if (!cell.info) return;
+            if (!cell.info) return false;
 
             //Convert a dot to a number if it is fully surrounded by None cells
             if (cell.type === CellType.Vision && !cell.info.noneCellsAround) {
@@ -59,14 +73,15 @@ export function SolveGrid(grid: Grid) {
                 if (tryAgain) break;
             }
 
-            //Isolated None cell; Replace with Blocker cell
-            if (cell.type === CellType.None && !cell.info.noneCellsAround && !cell.info.confirmedVisibleCells) {
+            //Isolated Non-Blocker cell; Replace with Blocker cell
+            if (cell.type !== CellType.Blocker && !cell.info.noneCellsAround && !cell.info.confirmedVisibleCells) {
                 cell.type = CellType.Blocker;
+                cell.value = null;
                 tryAgain = true;
                 break;
             }
         }
     }
 
-    console.log("Grid Solved in " + attempts + " attempts");
+    return false;
 }

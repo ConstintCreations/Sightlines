@@ -11,6 +11,7 @@ export function generatePuzzleWithSolution(size: number) {
     console.log("");
     grid.KeepValuesUnderGridSize();
     const solutionGrid = grid.CloneGrid();
+    printGridToConsole(solutionGrid);
     console.log("Cloned Grid in Solved State")
     grid.BreakDownGridToSolveable();
 
@@ -40,6 +41,7 @@ function printGridToConsole(grid: Grid, label: string | null = null) {
             if (cell.type == CellType.None) stringToPrint += "-";
             if (cell.type == CellType.Vision) stringToPrint += "O";
             if (cell.type == CellType.Value && cell.value) stringToPrint += cell.value.toString();
+            if (cell.type == CellType.Value && !cell.value) stringToPrint += "!";
         }
 
         console.log(stringToPrint);
