@@ -82,7 +82,7 @@ export function SolveGrid(grid: Grid): boolean {
             }
 
             //Isolated None cell; Replace with Blocker cell
-            if (cell.type == CellType.None && !cell.info.noneCellsAround && !cell.info.confirmedVisibleCells) {
+            if (cell.type === CellType.None && !cell.info.noneCellsAround && cell.info.valueReachedCellsAround && cell.info.confirmedVisibleCells === 0) {
                 cell.type = CellType.Blocker;
                 cell.value = null;
                 tryAgain = true;

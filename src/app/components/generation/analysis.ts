@@ -61,8 +61,6 @@ export function AnalyzeCellPassOne(grid: Grid, cell: Cell) {
     if (cell.type === CellType.Value) {
         if (cell.value === cell.info.confirmedVisibleCells) {
             cell.info.isValueReached = true;
-        } else if (cell.value === cell.info.confirmedVisibleCells + cell.info.noneCellsAround) {
-            cell.info.canBeReachedWithNoneCells = true;
         }
     }
 }
@@ -97,8 +95,6 @@ export function AnalyzeCellPassTwo(grid: Grid, cell: Cell) {
     if (cell.type === CellType.Value) {
         if (cell.value === cell.info.confirmedVisibleCells) {
             cell.info.isValueReached = true;
-        } else if (cell.value === cell.info.confirmedVisibleCells + cell.info.noneCellsAround) {
-            cell.info.canBeReachedWithNoneCells = true;
         }
     }
 
