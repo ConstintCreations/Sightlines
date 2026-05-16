@@ -1,12 +1,39 @@
-import { Grid } from "./types";
+import { Grid, CellType } from "./types";
 import { SolveGrid } from "./solver";
 
 export function generatePuzzleWithSolution(size: number) {
+    console.log("Generating new puzzle of size " + size);
     const grid = new Grid(size);
     grid.InitializeNoneAndValueCellsAsVision();
     SolveGrid(grid);
     grid.KeepValuesUnderGridSize();
     const solutionGrid = grid.CloneGrid();
+    console.log("Cloned Grid in Solved State")
     grid.BreakDownGridToSolveable();
+
+    printGridToConsole(grid, "Unsolved Grid");
+    printGridToConsole(solutionGrid, "Solved Grid");
+
     return { grid: grid, solutionGrid: solutionGrid };
+}
+
+function printGridToConsole(grid: Grid, label: string | null = null) {
+
+    if (label) {
+        console.log("\n" + label + "\n");
+    }
+
+    for (let y = 0; y < grid.size; y++) {
+        let stringToPrint = "";
+        for (let x = 0; x < grid.size; x++) {
+            const cell = grid.getCell(x, y);
+            if (!cell) return;
+            if (cell.type == CellType.Blocker) stringToPrint += "X";
+            if (cell.type == CellType.None) stringToPrint += "-";
+            if (cell.type == CellType.Vision) stringToPrint += "O";
+            if (cell.type == CellType.Value && cell.value) stringToPrint += cell.value.toString();
+        }
+
+        console.log(stringToPrint);
+    }
 }

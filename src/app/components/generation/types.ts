@@ -90,15 +90,16 @@ export class Grid {
     InitializeNoneAndValueCellsAsVision(shouldOverwriteValues:boolean = false) {
         this.forEachCell((cell) => {
             if (cell.type == CellType.None || (cell.type == CellType.Value && shouldOverwriteValues)) this.setCell(cell.x, cell.y, CellType.Vision);
-        })
+        });
+        console.log("Filled None " + (shouldOverwriteValues ? "and Value " : "") + "cells with Vision cells");
     }
 
     KeepValuesUnderGridSize() {
-        
+        console.log("Keeping values under " + this.size);
     }
 
     BreakDownGridToSolveable() {
-
+        console.log("Breaking down grid to solveable state");
     }
 
     CloneGrid() {
