@@ -1,5 +1,8 @@
 # Sightlines
 
+<img width="1915" height="906" alt="image" src="https://github.com/user-attachments/assets/b1df5474-fc81-40c0-bde6-fdc0d9da5da7" />
+
+
 **Sightlines** minimalist logic puzzle web game about vision, heavily inspired by [0h n0](https://0hn0.com/) by [Q42](https://www.q42.nl/en/). 
 
 ## How to Play
