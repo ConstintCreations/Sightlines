@@ -6,6 +6,7 @@ import { motion, useAnimation, Variants, AnimatePresence } from "framer-motion";
 import { Space_Mono } from "next/font/google";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronRight } from "@fortawesome/free-solid-svg-icons";
+import { CellType, Grid } from "./generation/types"; 
 
 const spaceMono = Space_Mono({ subsets: ['latin'], weight: '700' });
 
@@ -57,7 +58,8 @@ export default function MultiplayerGame() {
                 localStorage.setItem("elo", data.tempElo.toString());
                 localStorage.setItem("multiplayerGamesPlayed", data.newGamesPlayed.toString());
                 setSize(data.size);
-                setGridData(data.grid);
+                setEmptyGrid(Grid.fromJSON(data.emptyGrid));
+                setGrid(Grid.fromJSON(data.grid));
                 setStatus("playing");
             });
 
@@ -108,16 +110,8 @@ export default function MultiplayerGame() {
         }
     }, [askedIfReady, status]);
 
-    type Cell = {
-        index: number;
-        x: number;
-        y: number;
-        value: number | "X" | "O" | "-";
-        completedValue: number | "X" | "O" | "-";
-        neededForCompletion: boolean;
-    }
-
-    const [gridData, setGridData] = useState<Cell[]>([]);
+    const [emptyGrid, setEmptyGrid] = useState<Grid>();
+    const [grid, setGrid] = useState<Grid>();
     const [otherPlayerFinishedTime, setOtherPlayerFinishedTime] = useState<number | null>(null);
 
     const [elapsed, setElapsed] = useState(0);
@@ -146,7 +140,7 @@ export default function MultiplayerGame() {
         if (!timerStartedRef.current) return;
         timerStartedRef.current = false;
         //console.log("Stopping timer at elapsed time:", elapsed, " Completed:", completed);
-        socketRef.current?.emit("timerStopped", { elapsed: elapsed, gridData: gridData, completed: completed });
+        socketRef.current?.emit("timerStopped", { elapsed: elapsed, gridData: grid, completed: completed });
     }
 
     type Direction = "up" | "down" | "left" | "right";
@@ -162,80 +156,28 @@ export default function MultiplayerGame() {
     }, [otherPlayerFinishedTime, elapsed]);
 
     function checkForCompletion() {
-        if (gridData.some(cell => cell.value === "-")) return;
-        let completedCorrectly = true;
-        for (let i = 0; i < gridData.length; i++) {
-            if (gridData[i].value !== gridData[i].completedValue) {
-                completedCorrectly = false;
-            }
-        }
-
-        if (!completedCorrectly) { // Checks for completion while grids are not unique
-            function getCell(x: number, y: number): Cell | null {
-                if (x < 0 || x >= size || y < 0 || y >= size) return null;
-                return gridData[y * size + x];
-            }
-            for (let i = 1; i < gridData.length; i++) {
-                if (typeof(gridData[i].value) === "number") {
-                    let totalCount = 0;
-                    for (let direction of ["up", "down", "left", "right"] as Direction[]) {
-                        let visibleCount = 0;
-                        for (let j = 1; j < size; j++) {
-                            let xOffset = direction === "left" ? -j : direction === "right" ? j : 0;
-                            let yOffset = direction === "up" ? -j : direction === "down" ? j : 0;
-                            let targetCell = getCell(gridData[i].x + xOffset, gridData[i].y + yOffset);
-                            if (!targetCell || targetCell.value === "X") break;
-                            if ((targetCell.value === "O" || typeof targetCell.value === "number")) {
-                                visibleCount++;
-                            }
-                        }
-                        totalCount += visibleCount;
-                    }
-                    if (totalCount !== gridData[i].value) {
-                        //console.log("Number cell incorrect:", gridData[i], " expected ", gridData[i].value, " got ", totalCount);
-                        return;
-                    }
-                } else if (gridData[i].value === "O") {
-                    let visibleFromNumber = false;
-                    for (let direction of ["up", "down", "left", "right"] as Direction[]) {
-                        for (let j = 1; j < size; j++) {
-                            let xOffset = direction === "left" ? -j : direction === "right" ? j : 0;
-                            let yOffset = direction === "up" ? -j : direction === "down" ? j : 0;
-                            let targetCell = getCell(gridData[i].x + xOffset, gridData[i].y + yOffset);
-                            if (!targetCell || targetCell.value === "X") break;
-                            if (typeof targetCell.value === "number") {
-                                visibleFromNumber = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (!visibleFromNumber) {
-                        //console.log("O cell not visible from any number cell:", gridData[i]);
-                        return;
-                    }
-                } else if (gridData[i].value === "-") { 
-                    //console.log("Empty cell found:", gridData[i]);
-                    return;
-                }
-            }
-        }
+        if (!grid) return;
+        if (!grid.IsSameAsSolvedGrid()) return;
 
         stopTimer();
     }
 
     function clickCell(index: number, type: "left" | "right") {
-        if (gridData[index].neededForCompletion || timerStartedRef.current === false) {
-            //console.log(gridData[index]);
+        if (emptyGrid?.getCellByIndex(index)?.type == CellType.Blocker || emptyGrid?.getCellByIndex(index)?.type == CellType.Value || timerStartedRef.current === false) {
+            //console.log(emptyGrid?.getCellByIndex(index));
             return;
         };
-        gridData[index].value = (["-", "O", "X"] as const)[(type !== "right" ? ((colorIndex[index] + 1) % cellColors.length) : (((colorIndex[index] - 1) % cellColors.length) < 0 ? cellColors.length - 1 : (colorIndex[index] - 1) % cellColors.length))];
+        if (!grid) return;
+        const cell = grid.getCellByIndex(index);
+        if (!cell) return;
+        cell.type = ([CellType.None, CellType.Vision, CellType.Blocker] as const)[(type !== "right" ? ((colorIndex[index] + 1) % cellColors.length) : (((colorIndex[index] - 1) % cellColors.length) < 0 ? cellColors.length - 1 : (colorIndex[index] - 1) % cellColors.length))];
         setColorIndex((prev) => {
             const newColors = [...prev];
             newColors[index] = (type !== "right" ? ((newColors[index] + 1) % cellColors.length) : (((newColors[index] - 1) % cellColors.length) < 0 ? cellColors.length - 1 : (newColors[index] - 1) % cellColors.length));
             return newColors;    
         })
 
-        //console.log(gridData[index]);
+        //console.log(grid?.getCellByIndex(index));
         checkForCompletion();
     }
 
@@ -260,10 +202,12 @@ export default function MultiplayerGame() {
     const cellColors = ["--empty-cell", "--o-cell", "--x-cell"];
     const [colorIndex, setColorIndex] = useState<number[]>([]);
     useEffect(() => {
-        if (gridData.length === 0) return;
+        if (grid?.cells.length === 0) return;
         setColorIndex(Array.from({ length: size * size }).map((_, index) => {
-            if (gridData[index].value == "-") return 0;
-            if (gridData[index].value == "X") return 2;
+            //console.log(index);
+            //console.log(grid?.getCellByIndex(index));
+            if (grid?.getCellByIndex(index)?.type == CellType.None) return 0;
+            if (grid?.getCellByIndex(index)?.type == CellType.Blocker) return 2;
             return 1;
         }));
 
@@ -271,7 +215,7 @@ export default function MultiplayerGame() {
             startTimer();
         }, ((size*size-1)%size + Math.floor((size*size-1)/size)) * delayTime + 250);
 
-    }, [gridData]);
+    }, [grid]);
 
     const delayTime = -0.0075*size + 0.08;
     let fontSize = (-0.14*size + 2.76).toFixed(2);
@@ -331,7 +275,7 @@ export default function MultiplayerGame() {
                                     clickCell(index, "right");
                                 }}
                             >
-                                {gridData[index] && typeof gridData[index].value === "number" ? gridData[index].value : ""}
+                                {grid && grid.getCellByIndex(index)?.type === CellType.Value ? grid.getCellByIndex(index)?.value : ""}
                             </motion.div>
                         ))}
                     </div>
