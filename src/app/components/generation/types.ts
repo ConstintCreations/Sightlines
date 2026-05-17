@@ -146,6 +146,11 @@ export class Grid {
         return this.cells[this.getIndex(x, y)];
     }
 
+    getCellByIndex(index: number): Cell | null {
+        if (index < 0 || index >= this.size*this.size) return null;
+        return this.cells[index];
+    }
+
     setCell(x: number, y: number, type: CellType, value: number | null = null) {
         const cell = this.getCell(x, y);
         if (!cell) return;
@@ -332,6 +337,19 @@ export class Grid {
                 tryAgain = true;
             }
         }
+    }
+
+    IsSameAsSolvedGrid(): boolean {
+        if (!this.solved) return false;
+        for (const cell of this.cells) {
+            if (cell.type === CellType.None) return false;
+            const solvedCell = this.solved.getCell(cell.x, cell.y);
+            if (!solvedCell) return false;
+            if ((cell.type === CellType.Blocker && solvedCell.type === CellType.Blocker) || ((cell.type === CellType.Vision || cell.type === CellType.Value) && (solvedCell.type === CellType.Vision || solvedCell.type === CellType.Value))) {} else {
+                return false;
+            }
+        }
+        return true;
     }
 }
 
