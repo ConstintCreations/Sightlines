@@ -27,10 +27,6 @@ export default function Multiplayer() {
             </div>
 
             <ScoreDisplay singleplayer={false} />
-            <p className="text-[var(--alt-text)] mt-10 text-center">
-                * Currently, some grids may have multiple solutions. <br />
-                You only need to find 1.
-            </p>
         </div>
     );
 }

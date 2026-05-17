@@ -351,6 +351,20 @@ export class Grid {
         }
         return true;
     }
+
+    static fromJSON(data: {size: number, cells: any[], solved: any}) {
+        const solvedGrid = new Grid(data.size);
+        console.log(data);
+        if (data.solved) {
+            solvedGrid.cells = data.solved.cells;
+        }
+        
+        const grid = new Grid(data.size);
+        grid.cells = data.cells;
+        grid.size = data.size;
+        grid.solved = solvedGrid;
+        return grid;
+    }
 }
 
 //#endregion
