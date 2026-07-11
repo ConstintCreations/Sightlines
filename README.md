@@ -17,4 +17,4 @@
     - Right Click: Cycle in reverse
 
 ## Play
-https://sightlines.onrender.com/
+[sightlines.constint.dev](https://sightlines.constint.dev/)
